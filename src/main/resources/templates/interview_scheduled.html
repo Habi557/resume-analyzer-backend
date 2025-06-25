@@ -1,0 +1,53 @@
+<!-- 📁 interview_scheduled.html -->
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>Interview Selection</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4;">
+
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 40px 0;">
+    <tr>
+        <td align="center">
+            <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.1);">
+                <tr>
+                    <td style="background-color: #16a34a; padding: 20px; text-align: center;">
+                        <h1 style="margin: 0; font-size: 24px; color: #ffffff;" th:utext="'Congratulations, ' + ${name} + '!'"></h1>
+
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 30px; text-align: left; color: #333;">
+                        <p style="font-size: 16px;">We are pleased to inform you that you have been <strong>selected for the interview process</strong> for the position you applied for.</p>
+
+                        <p style="font-size: 16px;">Your skills and experience have impressed our screening panel, and we’re excited to take the next step with you.</p>
+
+                        <hr style="margin: 20px 0; border: none; border-top: 1px solid #e2e8f0;">
+
+                        <h3 style="color: #16a34a;">📅 Interview Details:</h3>
+                        <ul style="padding-left: 20px;">
+                            <li><strong>Date:</strong> {{interviewDate}}</li>
+                            <li><strong>Time:</strong> {{interviewTime}}</li>
+                            <li><strong>Mode:</strong> {{interviewMode}}</li>
+                        </ul>
+
+                        <p style="margin-top: 20px;">Please be prepared with a copy of your resume and a valid ID. Further instructions will be shared soon.</p>
+
+                        <div style="margin-top: 30px; text-align: center;">
+                            <a href="{{confirmationLink}}" style="background-color: #16a34a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-size: 16px;">Confirm Attendance</a>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="background-color: #f0fdf4; padding: 20px; text-align: center; font-size: 14px; color: #6b7280;">
+                        If you have any questions, feel free to contact us at <a href="mailto:hr@example.com" style="color: #16a34a;">hr@example.com</a>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>
