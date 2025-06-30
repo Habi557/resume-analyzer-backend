@@ -12,8 +12,12 @@ public class EmailController {
     @Autowired
     EmailService emailService;
     @GetMapping("/sendEmail/{id}")
-    public ResponseEntity<String> sendEmail(@PathVariable("id") Long id, @RequestParam String templateName){
-        boolean emailStatus = emailService.sendEmail(id, templateName);
+    public ResponseEntity<String> sendEmail(@PathVariable("id") Long id, @RequestParam String templateName, @RequestParam(required = false) String interviewDate, @RequestParam(required = false) String interviewTime, @RequestParam(required = false) String interviewMode){
+       System.out.println("interviewDate "+ interviewDate);
+        System.out.println("interviewTime "+ interviewTime);
+        System.out.println("interviewMode "+ interviewMode);
+
+        boolean emailStatus = emailService.sendEmail(id, templateName, interviewDate, interviewTime, interviewMode );
         if (emailStatus){
             return new ResponseEntity<String>("Email sent Successfully", HttpStatus.OK);
 

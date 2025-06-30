@@ -44,6 +44,8 @@ public class Resume {
     @Column(name = "redFlags",columnDefinition = "LONGTEXT")
     @Convert(converter = StringListConverter.class)
     private List<String> redFlags;
+//    @OneToMany(mappedBy = "resume", cascade = CascadeType.ALL, orphanRemoval = true)
+//    private List<ResumeAnalysisEntity> resumeAnalysisList;
 
 
 

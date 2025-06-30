@@ -44,6 +44,7 @@ public class ResumeController {
         }
 
     }
+
     @PostMapping("/screen-resume")
     public ResponseEntity<List<ResumeAnalysisDTO>> resumeScreen(@RequestParam("jobRole") String jobRole,@RequestParam(value = "scanAllresumesIsChecked", defaultValue = "false") boolean scanAllresumesIsChecked) throws JsonProcessingException {
         List<ResumeAnalysisDTO> screenedResult = null;

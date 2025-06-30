@@ -1,6 +1,10 @@
 package com.resume.backend.serviceImplementation;
 
 import com.resume.backend.entity.Resume;
+import com.resume.backend.entity.ResumeAnalysisEntity;
+import com.resume.backend.exceptions.InvalidEmailException;
+import com.resume.backend.helperclass.ResumeHelper;
+import com.resume.backend.repository.ResumeAnalysis;
 import com.resume.backend.repository.ResumeRepository;
 import com.resume.backend.services.EmailService;
 import jakarta.mail.Message;
@@ -24,30 +28,45 @@ public class EmailServiceImplementation implements EmailService {
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
     private ResumeRepository resumeRepository;
+    private ResumeAnalysis resumeAnalysisRepo;
+    private ResumeHelper resumeHelper;
 
     @Autowired
-     public  EmailServiceImplementation(JavaMailSender mailSender, TemplateEngine templateEngine, ResumeRepository resumeRepository) {
+     public  EmailServiceImplementation(JavaMailSender mailSender, TemplateEngine templateEngine, ResumeRepository resumeRepository,ResumeAnalysis resumeAnalysisRepo, ResumeHelper resumeHelper) {
         this.mailSender = mailSender;
         this.templateEngine = templateEngine;
         this.resumeRepository= resumeRepository;
+        this.resumeAnalysisRepo=resumeAnalysisRepo;
+        this.resumeHelper=resumeHelper;
     }
 
-    public boolean sendEmail(Long id, String templateName ) {
+    public boolean sendEmail(Long id, String templateName, String interviewDate, String interviewTime, String interviewMode ) {
         // String to, String subject, String templateName, Map<String, Object> model
-        Optional<Resume> resumeById = this.resumeRepository.findById(id);
+        ResumeAnalysisEntity resumeAnlysisEntity = this.resumeAnalysisRepo.findById(id).get();
         System.out.println("Template name: " + templateName);
 
-        Resume resume = resumeById.get();
+        Resume resume = resumeAnlysisEntity.getResume();
         String emailTo = resume.getEmail();
         MimeMessagePreparator message = null;
         Map<String, Object> model = new HashMap<>();
         model.put("name", resume.getName());
-        String subject="Just for testing the email";
-        if(emailTo != null && !emailTo.isEmpty()){
+        model.put("interviewDate",interviewDate);
+        model.put("interviewTime",interviewTime);
+        model.put("interviewMode",interviewMode);
+        resumeAnlysisEntity.setInterviewDate(interviewDate);
+        resumeAnlysisEntity.setInterviewTime(interviewTime);
+        resumeAnlysisEntity.setInterviewMode(interviewMode);
+        resumeAnlysisEntity.setSelectedStatus(templateName);
+        String subject = switch (templateName) {
+            case "interview_scheduled" -> "Interview Scheduled";
+            case "selected" -> "Congratulations! You’ve Been Selected";
+            default -> "Update on Your Application";
+        };
+        if(emailTo != null && !emailTo.isEmpty() && resumeHelper.isValidGmail(emailTo)){
             Context context = new Context();
             context.setVariables(model);
             templateName = templateName.trim();
-           // try {
+            try {
                 String htmlContent = templateEngine.process(templateName, context);
                 message = mimeMessage -> {
                     mimeMessage.setRecipient(Message.RecipientType.TO, new InternetAddress(emailTo));
@@ -56,13 +75,14 @@ public class EmailServiceImplementation implements EmailService {
                     mimeMessage.setContent(htmlContent, "text/html");
                 };
                 mailSender.send(message);
-                return true;
-//            }catch (TemplateInputException e){
-//                throw  new RuntimeException(" Email Template not found");
-//            }
+            this.resumeAnalysisRepo.save(resumeAnlysisEntity);
+            return true;
+            }catch (TemplateInputException e){
+                throw  new TemplateInputException(" Email Template not found");
+            }
 
         }else{
-            throw new RuntimeException("No email found");
+            throw  new InvalidEmailException("Invalid Email");
         }
 
 

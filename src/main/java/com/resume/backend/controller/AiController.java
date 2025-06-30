@@ -7,16 +7,14 @@ import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.Map;
 
 @RestController
+@RequestMapping("/sample")
 public class AiController {
     private final OllamaChatModel chatClient;
     private ChatClient chatClient2;
@@ -28,6 +26,12 @@ public class AiController {
     @GetMapping("/ai/generate")
     public Map<String,String> generate(@RequestParam(value = "message", defaultValue = "Tell me a joke") String message) {
         return Map.of("generation", this.chatClient.call(message));
+    }
+    
+    @GetMapping("/process")
+    public String processInput(@RequestParam("input") String input) {
+        // Call the AI with the provided input and return the response as a string
+        return this.chatClient.call(input);
     }
     @PostMapping("/upload")
     public String handleFileUpload(@RequestParam("file") MultipartFile file) throws Exception {

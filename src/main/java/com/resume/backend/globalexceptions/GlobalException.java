@@ -1,12 +1,13 @@
 package com.resume.backend.globalexceptions;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.resume.backend.exceptions.InvaidFileFormatException;
+import com.resume.backend.exceptions.InvalidEmailException;
 import com.resume.backend.exceptions.JsonProcessingRuntimeException;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.ProblemDetail;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.thymeleaf.exceptions.TemplateInputException;
 
 import java.time.Instant;
 
@@ -30,4 +31,35 @@ public class GlobalException {
         problemDetail.setDetail(ex.getOriginalMessage());
         return problemDetail;
     }
+    @ExceptionHandler(InvalidEmailException.class)
+    public ResponseEntity<ProblemDetail> handleInvalidEmailException(Exception ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problemDetail.setTitle("Invalid Email");
+        problemDetail.setDetail(ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .body(problemDetail);
+    }
+    @ExceptionHandler(TemplateInputException.class)
+    public ResponseEntity<ProblemDetail> handleTemplateInputException(Exception ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problemDetail.setTitle("Template Input Exception");
+        problemDetail.setDetail(ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .body(problemDetail);
+    }
+    @ExceptionHandler(InvaidFileFormatException.class)
+    public ResponseEntity<ProblemDetail> handleInvaidFileFormatException(Exception ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problemDetail.setTitle("Unsupported File Format");
+        problemDetail.setDetail(ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .body(problemDetail);
+    }
+
 }

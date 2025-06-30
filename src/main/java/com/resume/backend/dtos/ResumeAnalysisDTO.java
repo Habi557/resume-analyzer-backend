@@ -3,6 +3,7 @@ package com.resume.backend.dtos;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.resume.backend.entity.Resume;
+import jakarta.persistence.Column;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -15,8 +16,8 @@ public class ResumeAnalysisDTO {
 //    private  int bestMatch;
 //    private  double averageExperience;
 
-//    @JsonProperty("id")
-//    private long id;
+    @JsonProperty("id")
+    private long id;
     @JsonProperty("matchPercentage")
     private int matchPercentage;
 
@@ -43,12 +44,21 @@ public class ResumeAnalysisDTO {
     private  List<String> education;
     @JsonProperty("resume_id")
     private Resume resume;
-    @JsonProperty("templates/email")
+    @JsonProperty("email")
     private String email;
     @JsonProperty("phone")
     private String phone;
     @JsonProperty("redFlags")
     private List<String> redFlags;
+    @JsonProperty("interviewDate")
+    private String interviewDate;
+    @JsonProperty("interviewTime")
+    private String interviewTime;
+    @JsonProperty("interviewMode")
+    private  String interviewMode;
+    @JsonProperty("selectedStatus")
+    private String selectedStatus;
+
 
 
 

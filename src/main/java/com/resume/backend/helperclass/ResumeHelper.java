@@ -61,4 +61,8 @@ public class ResumeHelper {
         }
         return template;
     }
+    public boolean isValidGmail(String email) {
+        String regex = "^[\\w.-]+@gmail\\.com$";
+        return email.matches(regex);
+    }
 }

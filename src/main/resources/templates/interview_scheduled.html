@@ -25,11 +25,11 @@
 
                         <hr style="margin: 20px 0; border: none; border-top: 1px solid #e2e8f0;">
 
-                        <h3 style="color: #16a34a;">📅 Interview Details:</h3>
+                        <h3 style="color: #16a34a;">Interview Details:</h3>
                         <ul style="padding-left: 20px;">
-                            <li><strong>Date:</strong> {{interviewDate}}</li>
-                            <li><strong>Time:</strong> {{interviewTime}}</li>
-                            <li><strong>Mode:</strong> {{interviewMode}}</li>
+                            <li><strong>Date:</strong> <span th:utext="${interviewDate}"></span></li>
+                            <li><strong>Time:</strong> <span th:utext="${interviewTime}"></span></li>
+                            <li><strong>Mode:</strong> <span th:utext="${interviewMode}"></span></li>
                         </ul>
 
                         <p style="margin-top: 20px;">Please be prepared with a copy of your resume and a valid ID. Further instructions will be shared soon.</p>

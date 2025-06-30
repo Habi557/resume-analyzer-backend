@@ -6,6 +6,7 @@ import com.resume.backend.dtos.DashboardDto;
 import com.resume.backend.dtos.ResumeAnalysisDTO;
 import com.resume.backend.entity.Resume;
 import com.resume.backend.entity.ResumeAnalysisEntity;
+import com.resume.backend.exceptions.InvaidFileFormatException;
 import com.resume.backend.exceptions.JsonProcessingRuntimeException;
 import com.resume.backend.helperclass.ResumeHelper;
 import com.resume.backend.repository.ResumeAnalysis;
@@ -88,7 +89,7 @@ public class ResumeServiceImplementation implements ResumeService {
         } else if (file.getOriginalFilename().endsWith(".docx")) {
             extractedText = resumeHelper.extractTextFromDocx(file);
         } else {
-            throw new IllegalArgumentException("Unsupported file type");
+            throw new InvaidFileFormatException("Unsupported File Format");
         }
         System.out.println("//////////////////////////////////");
         // Extract Josn from resumText using AI Model
@@ -189,11 +190,23 @@ public class ResumeServiceImplementation implements ResumeService {
         int totalResumeIncresedPercentage =  (int)(((double) (totalResumesAnalysisedCount - totalResumesNotAnalysisedCount) /  totalResumesAnalysisedCount) * 100);
         Optional<ResumeAnalysisEntity> maxMatchPercentage = resumeAnalysis.findAll().stream().max(Comparator.comparing(ResumeAnalysisEntity::getMatchPercentage));
         int candidatesScreened = resumeAnalysis.findAll().size();
+        double totalExperience = 0;
+        int validCount = 0;
+
+        for (Resume resume : listOfResumes) {
+            if (resume.getYearsOfExperience() != 0.0) {
+                totalExperience += resume.getYearsOfExperience();
+                validCount++;
+            }
+        }
+        double averageExperience = validCount > 0 ? totalExperience / validCount : 0;
         DashboardDto dashboardDto = new DashboardDto();
         dashboardDto.setTotalResumes(totalResumes);
         dashboardDto.setCanditateScanned(candidatesScreened);
         dashboardDto.setTotalResumePercentage(totalResumeIncresedPercentage);
+        dashboardDto.setAverageExperience(averageExperience);
         maxMatchPercentage.ifPresent(resumeAnalysisEntity -> dashboardDto.setBestMatch(resumeAnalysisEntity.getMatchPercentage()));
+        dashboardDto.setResumeAnalysisEntity(maxMatchPercentage.get());
 
 
         return dashboardDto;

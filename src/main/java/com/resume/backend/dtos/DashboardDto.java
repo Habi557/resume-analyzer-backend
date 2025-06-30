@@ -1,15 +1,21 @@
 package com.resume.backend.dtos;
 
+import com.resume.backend.entity.Resume;
+import com.resume.backend.entity.ResumeAnalysisEntity;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.stereotype.Component;
 
-
+@Getter
+@Setter
 public class DashboardDto {
     private long totalResumes;
     private  Double totalResumePercentage;
     private long canditateScanned;
     private int totalCanditatePercentage;
     private int bestMatch;
-    private int averageExperience;
+    private double averageExperience;
+    private ResumeAnalysisEntity resumeAnalysisEntity;
 
     public long getTotalResumes() {
         return totalResumes;
@@ -35,11 +41,11 @@ public class DashboardDto {
         this.bestMatch = bestMatch;
     }
 
-    public int getAverageExperience() {
+    public double getAverageExperience() {
         return averageExperience;
     }
 
-    public void setAverageExperience(int averageExperience) {
+    public void setAverageExperience(double averageExperience) {
         this.averageExperience = averageExperience;
     }
 

@@ -47,5 +47,13 @@ public class ResumeAnalysisEntity {
     @ManyToOne
     @JoinColumn(name = "resume_id", referencedColumnName = "id")
     private Resume resume;
+    @Column(name="interviewDate")
+    private String interviewDate;
+    @Column(name="interviewTime")
+    private String interviewTime;
+   @Column(name="interviewMode")
+    private  String interviewMode;
+   @Column(name = "selectedStatus")
+    private String selectedStatus;
 
 }

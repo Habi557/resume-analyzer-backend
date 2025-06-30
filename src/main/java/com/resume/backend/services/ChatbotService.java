@@ -5,5 +5,5 @@ import com.resume.backend.dtos.ChatbotResponse;
 import java.util.List;
 
 public interface ChatbotService {
-    List<ChatbotResponse> chatbotCall(String query);
+    String chatbotCall(String query);
 }
