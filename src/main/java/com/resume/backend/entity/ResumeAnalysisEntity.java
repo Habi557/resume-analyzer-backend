@@ -1,9 +1,12 @@
 package com.resume.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.resume.backend.helperclass.StringListConverter;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,16 +22,6 @@ public class ResumeAnalysisEntity {
     private int matchPercentage;
     @Lob
     @Convert(converter = StringListConverter.class)
-    @Column(name = "extractedSkills",columnDefinition = "LONGTEXT")
-    private List<String> extractedSkills;
-    @Column(name = "name")
-    private String name;
-    @Column(name = "address")
-    private  String address;
-    @Column(name = "yearsOfExperience")
-    private double yearsOfExperience;
-    @Lob
-    @Convert(converter = StringListConverter.class)
     @Column(name = "suggestions",columnDefinition = "LONGTEXT")
     private List<String> suggestions;
     @Lob
@@ -40,12 +33,10 @@ public class ResumeAnalysisEntity {
     private List<String> topMatchingSkills;
 //    @Column(name = "aiRecommendation")
 //    private  String
-    @Lob
-    @Convert(converter = StringListConverter.class)
-    @Column(name = "education",columnDefinition = "LONGTEXT")
-    private  List<String> education;
     @ManyToOne
     @JoinColumn(name = "resume_id", referencedColumnName = "id")
+    @ToString.Exclude // ✅ prevents stack overflow
+    @JsonBackReference("resume-analysis")
     private Resume resume;
     @Column(name="interviewDate")
     private String interviewDate;

@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.net.ConnectException;
 import java.util.stream.Collectors;
 @Component
 public class ResumeHelper {
@@ -65,4 +66,5 @@ public class ResumeHelper {
         String regex = "^[\\w.-]+@gmail\\.com$";
         return email.matches(regex);
     }
+
 }

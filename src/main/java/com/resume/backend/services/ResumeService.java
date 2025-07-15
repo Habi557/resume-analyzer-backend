@@ -12,9 +12,9 @@ import java.util.List;
 
 public interface ResumeService {
     String generateResumeResponse(String userResumeDeatils);
-     Resume uploadResume(Long userId, MultipartFile file) throws IOException;
+     Resume uploadResume(Long userId, MultipartFile file) ;
 
-    List<ResumeAnalysisDTO> resumeScreen(String text, boolean scanAllresumesIsChecked) throws JsonProcessingException;
+    List<ResumeAnalysisDTO> resumeScreen(String text, boolean scanAllresumesIsChecked) ;
 
     List<ResumeAnalysisDTO> getAllAnalysiedResumes(int pageNo, int pageSize);
 

@@ -1,12 +1,19 @@
 package com.resume.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.resume.backend.helperclass.StringListConverter;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 import java.util.List;
 @Data
+@Getter
+@Setter
 @Entity
 @Table(name="resume")
 public class Resume {
@@ -15,19 +22,26 @@ public class Resume {
     private Long id;
     @Column(name="user_id")
     private Long userId;
+    @JsonProperty("name")
     @Column(name = "canditate_name")
     private String  name;
-    @Lob
-    @Column(name = "skills",columnDefinition = "LONGTEXT")
-    @Convert(converter = StringListConverter.class)
-    private List<String> extractedSkills;
+//    @Lob
+//    @Column(name = "skills",columnDefinition = "LONGTEXT")
+//    @Convert(converter = StringListConverter.class)
+//    private List<String> extractedSkills;
+    @OneToMany(mappedBy = "resume", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.LAZY)
+    @JsonManagedReference("resume-skill")
+    @JsonProperty("skills")
+    private List<Skill> skills;
     @Column(name="yearsOfExperience")
+    @JsonProperty("yearsOfExperience")
     private double yearsOfExperience;
     @Column(name = "fileName")
     private String originalFileName;
     @Column(name = "filePath")
     private String filePath;
-    @Column(name = "address")
+    @Column(name = "canditate_address")
+    @JsonProperty("address")
     private  String address;
     @Lob
     @Column(name = "extracted_text", columnDefinition = "LONGTEXT")
@@ -37,103 +51,27 @@ public class Resume {
     @Column(name = "scanAllresumesIsChecked")
     private Boolean scanAllresumesIsChecked = Boolean.FALSE;
     @Column(name= "email")
+    @JsonProperty("email")
     private String email;
     @Column(name="phone")
+    @JsonProperty("phone")
     private String phone;
     @Lob
+    @Convert(converter = StringListConverter.class)
+    @Column(name = "education",columnDefinition = "LONGTEXT")
+    @JsonProperty("education")
+    private  List<String> education;
+    @Lob
     @Column(name = "redFlags",columnDefinition = "LONGTEXT")
+    @JsonProperty("redFlags")
     @Convert(converter = StringListConverter.class)
     private List<String> redFlags;
-//    @OneToMany(mappedBy = "resume", cascade = CascadeType.ALL, orphanRemoval = true)
-//    private List<ResumeAnalysisEntity> resumeAnalysisList;
+    @OneToMany(mappedBy = "resume", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude // ✅ prevents stack overflow
+    @JsonManagedReference("resume-analysis")
+    private List<ResumeAnalysisEntity> resumeAnalysisList;
 
 
 
-    public Long getId() {
-        return id;
-    }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public List<String> getExtractedSkills() {
-        return extractedSkills;
-    }
-
-    public void setExtractedSkills(List<String> extractedSkills) {
-        this.extractedSkills = extractedSkills;
-    }
-
-    public double getYearsOfExperience() {
-        return yearsOfExperience;
-    }
-
-    public void setYearsOfExperience(double yearsOfExperience) {
-        this.yearsOfExperience = yearsOfExperience;
-    }
-
-    public String getOriginalFileName() {
-        return originalFileName;
-    }
-
-    public void setOriginalFileName(String originalFileName) {
-        this.originalFileName = originalFileName;
-    }
-
-    public String getFilePath() {
-        return filePath;
-    }
-
-    public void setFilePath(String filePath) {
-        this.filePath = filePath;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
-    public String getExtractedText() {
-        return extractedText;
-    }
-
-    public void setExtractedText(String extractedText) {
-        this.extractedText = extractedText;
-    }
-
-    public LocalDateTime getUploadTime() {
-        return uploadTime;
-    }
-
-    public void setUploadTime(LocalDateTime uploadTime) {
-        this.uploadTime = uploadTime;
-    }
-
-    public Boolean isScanAllresumesIsChecked() {
-        return scanAllresumesIsChecked;
-    }
-
-    public void setScanAllresumesIsChecked(Boolean scanAllresumesIsChecked) {
-        this.scanAllresumesIsChecked = scanAllresumesIsChecked;
-    }
 }

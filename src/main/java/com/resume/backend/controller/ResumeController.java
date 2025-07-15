@@ -20,6 +20,7 @@ import reactor.core.publisher.Flux;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 @RestController
@@ -38,24 +39,19 @@ public class ResumeController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Resume is null");
         }
-        catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Upload failed: " + e.getMessage());
-        }
+//        catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+//                    .body("Upload failed: " + e.getMessage());
+//        }
 
     }
 
     @PostMapping("/screen-resume")
-    public ResponseEntity<List<ResumeAnalysisDTO>> resumeScreen(@RequestParam("jobRole") String jobRole,@RequestParam(value = "scanAllresumesIsChecked", defaultValue = "false") boolean scanAllresumesIsChecked) throws JsonProcessingException {
+    public ResponseEntity<List<ResumeAnalysisDTO>> resumeScreen(@RequestBody Map<String, String> requestBody, @RequestParam(value = "scanAllresumesIsChecked", defaultValue = "false") boolean scanAllresumesIsChecked)  {
         List<ResumeAnalysisDTO> screenedResult = null;
-        try {
-            screenedResult = resumeService.resumeScreen(jobRole,scanAllresumesIsChecked);
+        screenedResult = resumeService.resumeScreen(requestBody.get("jobDescription"),scanAllresumesIsChecked);
             return  new ResponseEntity<List<ResumeAnalysisDTO>>(screenedResult,HttpStatus.OK);
-        } catch (JsonProcessingException e) {
-            throw new JsonProcessingException("Not a valid json format") {};
-           // throw new JsonProcessingRuntimeException("Invalid JSON format response",new JsonProcessingException("Json Error") {});
 
-        }
        // return ResponseEntity.ok(screenedResult);
     }
     @GetMapping("/getAllAnalysiedResumes")

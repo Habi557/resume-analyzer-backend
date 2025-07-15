@@ -1,6 +1,7 @@
 package com.resume.backend.globalexceptions;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.resume.backend.exceptions.AiNotRespondingException;
 import com.resume.backend.exceptions.InvaidFileFormatException;
 import com.resume.backend.exceptions.InvalidEmailException;
 import com.resume.backend.exceptions.JsonProcessingRuntimeException;
@@ -60,6 +61,12 @@ public class GlobalException {
                 .status(HttpStatus.BAD_REQUEST)
                 .contentType(MediaType.APPLICATION_PROBLEM_JSON)
                 .body(problemDetail);
+    }
+    @ExceptionHandler(AiNotRespondingException.class)
+    public ResponseEntity<String> handleAiNotResponding(AiNotRespondingException ex) {
+        return ResponseEntity
+                .status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ex.getMessage());
     }
 
 

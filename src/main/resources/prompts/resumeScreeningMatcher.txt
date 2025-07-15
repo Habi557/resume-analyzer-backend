@@ -2,15 +2,11 @@ You are an AI Resume Screener. Analyze the following provided resumeText and job
 ResumeText is {resumeText} and job role is {jobRole}
         Return the response in JSON format with the following structure and don't add any text before or after the json
                            {
-                               "name": "Name of the resume ",
-                               "address": "give only the city of the resume holder as string"
+
                                "matchPercentage": "percentage value of match between 0 to 100 integer value ",
-                               "extractedSkills": ["list", "of", "skills"],
-                               "yearsOfExperience": "give the integer value",
                                "suggestions": [list of suggestions as string format],
                                "analysis": "analysis response as string",
                                "topMatchingSkills": [list of top Matching  Technical skills],
-                               "education": [give me the education details as list of string]
                            }
         IMPORTANT: Your response must be pure JSON without any additional text and don't provide any comments if the fields is empty or something else.
         IMPORTANT : Dont't add any comments for the JSON

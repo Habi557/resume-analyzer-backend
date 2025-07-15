@@ -3,11 +3,12 @@ ResumeText is {resumeText}
         Return the response in JSON format with the following structure
                            {
                                "name": "Name of the resume ",
-                               "extractedSkills": ["list", "of", "skills"],
+                               "skills": [give me the list of skills],
                                "yearsOfExperience": "give the integer value",
                                "address": "give only the city of the resume holder as string"
                                "email": "give the email id of the resume holder ex: hello@gmail.com",
                                "phone": "give the phone number of the resume holder",
-                               "redFlags": "List potential red flags in this resume. Look for employment gaps,“frequent job changes”, “long employment gaps”, “no tech stack mentioned”, missing information(like name, email, address, phone..), etc. give me only important flags text"
+                               "education": "education details as string",
+                               "redFlags": "[List potential red flags in this resume. Look for employment gaps,“frequent job changes”, “long employment gaps”, “no tech stack mentioned”, missing information(like name, email, address, phone..), etc. give me only important flags text]"
                            }
         IMPORTANT: Your response must be pure JSON without any additional text
