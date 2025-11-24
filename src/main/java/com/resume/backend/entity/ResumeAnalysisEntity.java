@@ -1,11 +1,14 @@
 package com.resume.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.resume.backend.helperclass.StringListConverter;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 
 import java.time.LocalDateTime;
@@ -28,8 +31,11 @@ public class ResumeAnalysisEntity {
     @Column(name = "analysis",columnDefinition = "LONGTEXT")
     private String conclusion;
     @Column(name = "analysizedtime")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime analysizedTime;
-    @Column(name = "topMatchingSkills")
+    @Lob
+    @Convert(converter = StringListConverter.class)
+    @Column(name = "top_matching_skills", columnDefinition = "LONGTEXT")
     private List<String> topMatchingSkills;
 //    @Column(name = "aiRecommendation")
 //    private  String
@@ -46,5 +52,6 @@ public class ResumeAnalysisEntity {
     private  String interviewMode;
    @Column(name = "selectedStatus")
     private String selectedStatus;
+
 
 }

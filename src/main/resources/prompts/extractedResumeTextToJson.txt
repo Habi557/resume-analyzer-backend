@@ -1,14 +1,26 @@
-You are an AI Resume Screener. Analyze the following provided resumeText.
-ResumeText is {resumeText}
-        Return the response in JSON format with the following structure
-                           {
-                               "name": "Name of the resume ",
-                               "skills": [give me the list of skills],
-                               "yearsOfExperience": "give the integer value",
-                               "address": "give only the city of the resume holder as string"
-                               "email": "give the email id of the resume holder ex: hello@gmail.com",
-                               "phone": "give the phone number of the resume holder",
-                               "education": "education details as string",
-                               "redFlags": "[List potential red flags in this resume. Look for employment gaps,“frequent job changes”, “long employment gaps”, “no tech stack mentioned”, missing information(like name, email, address, phone..), etc. give me only important flags text]"
-                           }
-        IMPORTANT: Your response must be pure JSON without any additional text
+You are an AI Resume Screener. Extract structured information from the resumeText.
+
+Return ONLY valid JSON. Do NOT include comments, explanations, or reasoning.
+If any field is missing in the resume, return an empty string or empty list.
+
+Respond in exactly this JSON structure:
+
+{
+  "name": "",
+  "skills": [],
+  "yearsOfExperience": 0,
+  "address": "",
+  "email": "",
+  "phone": "",
+  "education": "",
+  "redFlags": []
+}
+
+Definitions:
+- address → ONLY city name (do not include state/country).
+- skills → list of only technical skills.
+- yearsOfExperience → integer number (approximate if needed).
+- redFlags → list of issues like missing info, job gaps, no skills, inconsistent dates, etc.
+
+Resume:
+{resumeText}

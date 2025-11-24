@@ -23,4 +23,8 @@ public interface ResumeService {
     Resource dowloadResume(long resumeId);
 
     List<Resume> getAllResumes();
+
+    List<String> getSuggestions(String query);
+
+    List<Resume> findResumesBySkillName(String lowerCase, int currentPage, int pageSize);
 }

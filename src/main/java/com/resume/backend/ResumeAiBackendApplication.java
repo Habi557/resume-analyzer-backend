@@ -8,16 +8,35 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-
+@EnableAsync
 @SpringBootApplication
 public class ResumeAiBackendApplication {
 
 	//	swap two numbers
 	public static void main(String[] args) {
 		SpringApplication.run(ResumeAiBackendApplication.class, args);
+		int nums[] = {1,-2,-3};
+		for(int i=1;i<nums.length-1;i++){
+			nums[i]=nums[i]+nums[i-1];
+
+		}
+		Arrays.sort(nums);
+		int min=nums[0];
+		if(min>0){
+			//return 1;
+			System.out.println("min "+ 1);
+		}
+		else{
+			//return -1*(min+1);
+			System.out.println("min "+ (-1*min)+1);
+
+		}
 	}
 
 	
@@ -144,6 +163,9 @@ public class ResumeAiBackendApplication {
 		System.out.println("Saveing the insturctor Deatails"+ tempInstructor);
 		appDAo.save(tempInstructor);
 	}
+
+
+	
 		
 	
 }

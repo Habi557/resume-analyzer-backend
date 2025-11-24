@@ -10,6 +10,7 @@ import com.resume.backend.entity.Resume;
 import com.resume.backend.entity.ResumeAnalysisEntity;
 import com.resume.backend.entity.Skill;
 import com.resume.backend.exceptions.AiNotRespondingException;
+import com.resume.backend.exceptions.FileNotFoundEx;
 import com.resume.backend.exceptions.InvaidFileFormatException;
 import com.resume.backend.exceptions.JsonProcessingRuntimeException;
 import com.resume.backend.helperclass.AiApis;
@@ -29,16 +30,22 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientException;
 
@@ -147,12 +154,52 @@ public class ResumeServiceImplementation implements ResumeService {
 
     }
 
-    @Override
-    @Transactional
+    //@Override
+  //  @Transactional
+//    public List<ResumeAnalysisDTO> resumeScreen(String jobRole, boolean scanAllresumesIsChecked){
+//        //Load all the resume data
+//        List<Resume> listOfResumes=this.resumeRepository.findAll();
+//        List<ResumeAnalysisDTO> listOfResumeAnalysisDtoAfterFilter;
+//        // If conditions for all the resumes
+//        if(scanAllresumesIsChecked){
+//            listOfResumeAnalysisDtoAfterFilter = resumeScreenAI(listOfResumes, jobRole);
+//        }
+//        // else condition for newly add resumes
+//        else {
+//            List<Resume> listOfResumeAfterFilter = listOfResumes.stream().filter(resume -> !resume.getScanAllresumesIsChecked()).collect(Collectors.toList());
+//             listOfResumeAnalysisDtoAfterFilter = resumeScreenAI(listOfResumeAfterFilter, jobRole);
+//        }
+//
+//        // convert the list of ResumeAnalysisDTO to ResumeAnalysisEntity
+//        List<ResumeAnalysisEntity> resumeAnalysisEntityList = listOfResumeAnalysisDtoAfterFilter.stream()
+//                .map((dto) ->{
+//                    try {
+//                        ResumeAnalysisEntity entity = modelMapper.map(dto, ResumeAnalysisEntity.class);
+//                        entity.setId(null);
+//                        entity.setAnalysizedTime(LocalDateTime.now());
+//                        entity.setResume(dto.getResume());
+//                        return  entity;
+//                    }catch (JsonProcessingRuntimeException e){
+//                        throw new JsonProcessingRuntimeException("Invalid json format");
+//                    }
+//                   // resumeAnalysis.save(entity);
+//
+//
+//                } )
+//                .collect(Collectors.toList());
+//        if(resumeAnalysisEntityList.size()>0 && scanAllresumesIsChecked){
+//            resumeAnalysis.deleteAll();
+//        }
+//        resumeAnalysis.saveAll(resumeAnalysisEntityList);
+//
+//        return listOfResumeAnalysisDtoAfterFilter;
+//
+//
+//
+//    }
     public List<ResumeAnalysisDTO> resumeScreen(String jobRole, boolean scanAllresumesIsChecked){
         //Load all the resume data
         List<Resume> listOfResumes=this.resumeRepository.findAll();
-       // List<ResumeAnalysisDTO> resumeAnalysisDTOS = resumeHelper.extractResumeEntityFromResumeTest(listOfResumes);
         List<ResumeAnalysisDTO> listOfResumeAnalysisDtoAfterFilter;
         // If conditions for all the resumes
         if(scanAllresumesIsChecked){
@@ -161,30 +208,8 @@ public class ResumeServiceImplementation implements ResumeService {
         // else condition for newly add resumes
         else {
             List<Resume> listOfResumeAfterFilter = listOfResumes.stream().filter(resume -> !resume.getScanAllresumesIsChecked()).collect(Collectors.toList());
-             listOfResumeAnalysisDtoAfterFilter = resumeScreenAI(listOfResumeAfterFilter, jobRole);
+            listOfResumeAnalysisDtoAfterFilter = resumeScreenAI(listOfResumeAfterFilter, jobRole);
         }
-
-        // convert the list of ResumeAnalysisDTO to ResumeAnalysisEntity
-        List<ResumeAnalysisEntity> resumeAnalysisEntityList = listOfResumeAnalysisDtoAfterFilter.stream()
-                .map((dto) ->{
-                    try {
-                        ResumeAnalysisEntity entity = modelMapper.map(dto, ResumeAnalysisEntity.class);
-                        entity.setId(null);
-                        entity.setAnalysizedTime(LocalDateTime.now());
-                        entity.setResume(dto.getResume());
-                        return  entity;
-                    }catch (JsonProcessingRuntimeException e){
-                        throw new JsonProcessingRuntimeException("Invalid json format");
-                    }
-                   // resumeAnalysis.save(entity);
-
-
-                } )
-                .collect(Collectors.toList());
-        if(resumeAnalysisEntityList.size()>0 && scanAllresumesIsChecked){
-            resumeAnalysis.deleteAll();
-        }
-        resumeAnalysis.saveAll(resumeAnalysisEntityList);
 
         return listOfResumeAnalysisDtoAfterFilter;
 
@@ -192,11 +217,12 @@ public class ResumeServiceImplementation implements ResumeService {
 
     }
 
+
     @Override
     public List<ResumeAnalysisDTO> getAllAnalysiedResumes(int pageNo,int pageSize) {
         int totalResumes = resumeRepository.findAll().size();
 
-        PageRequest pageRequest = PageRequest.of(pageNo, pageSize, Sort.by("matchPercentage").descending());
+        PageRequest pageRequest = PageRequest.of(pageNo, pageSize, Sort.by("id").descending());
         Page<ResumeAnalysisEntity> all = resumeAnalysis.findAll(pageRequest);
         List<ResumeAnalysisEntity> resumeAnalysisEntity = all.getContent();
         // int candidatesScreened = resumeAnalysisEntity.size();
@@ -251,71 +277,180 @@ public class ResumeServiceImplementation implements ResumeService {
 
 
 
-    @Transactional
-    public List<ResumeAnalysisDTO> resumeScreenAI(List<Resume> listOfResumes,String jobRole){
-       List<ResumeAnalysisDTO> listOfResumeAnalysisDto = listOfResumes.stream()
-                .map(resume -> {
-                    try {
-                        // Step 1: Prepare the resume text with template
-                        String tempResumeText="Name: "+resume.getName()+" skills: "+resume.getSkills()+" Experience: "+resume.getYearsOfExperience()+" address: "+resume.getAddress();
-                        String template = resumeHelper.loadPromptTemplate("prompts/resumeScreeningMatcher.txt");
-                        String resumeText = resumeHelper.putValuesToPrompt(template, Map.of("resumeText", tempResumeText, "jobRole", jobRole));
-
-//                        // Step 2: Get AI response
-//                        String content = chatClient.prompt()
-//                                .user(resumeText)
-//                                .call()
-//                                .chatResponse()
-//                                .getResult()
-//                                .getOutput()
-//                                .getContent();
-                        String content = aiApis.callAiService(resumeText);
-
-
-                        // Step 3: Process the JSON response
-                        String validJson = resumeHelper.extractJson(content);
-                        System.out.println("validJson ++++++++++++++++++++++++++++++");
-                        System.out.println(validJson);
-                        resume.setScanAllresumesIsChecked(true);
-                       //resumeRepository.save(resume);
-
-                        ResumeAnalysisDTO resumeAnalysisDTO = new ObjectMapper().readValue(validJson, ResumeAnalysisDTO.class);
-                        resumeAnalysisDTO.setResume(resume);
-                        return resumeAnalysisDTO;
-
-                    }
-//                    catch(JsonProcessingException e){
-//                        throw new JsonProcessingRuntimeException("Invalid Json format response",e);
+//    @Transactional
+//    public List<ResumeAnalysisDTO> resumeScreenAI(List<Resume> listOfResumes,String jobRole){
+//       List<ResumeAnalysisDTO> listOfResumeAnalysisDto = listOfResumes
+//               .stream()
+//                .map(resume -> {
+//                    try {
+//                        // Step 1: Prepare the resume text with template
+//                        String tempResumeText="Name: "+resume.getName()+" skills: "+resume.getSkills()+" Experience: "+resume.getYearsOfExperience()+" address: "+resume.getAddress();
+//                        String template = resumeHelper.loadPromptTemplate("prompts/resumeScreeningMatcher.txt");
+//                        String resumeText = resumeHelper.putValuesToPrompt(template, Map.of("resumeText", tempResumeText, "jobRole", jobRole));
+//                        String content = aiApis.callAiService(resumeText);
+//                        // Step 3: Process the JSON response
+//                        String validJson = resumeHelper.extractJson(content);
+//                        System.out.println("validJson ++++++++++++++++++++++++++++++");
+//                        System.out.println(validJson);
+//                        resume.setScanAllresumesIsChecked(true);
+//                       //resumeRepository.save(resume);
+//
+//                        ResumeAnalysisDTO resumeAnalysisDTO = new ObjectMapper().readValue(validJson, ResumeAnalysisDTO.class);
+//                        resumeAnalysisDTO.setResume(resume);
+//                        return resumeAnalysisDTO;
+//
 //                    }
-                    catch (IOException e) {
-                        throw new RuntimeException("Failed to load template or process resume", e);
-                    }catch (RestClientException e){
-                        throw new AiNotRespondingException("AI is not responding");
-                    }
+//                    catch (IOException e) {
+//                        throw new RuntimeException("Failed to load template or process resume", e);
+//                    }catch (RestClientException e){
+//                        throw new AiNotRespondingException("AI is not responding");
+//                    }
+//
+//                })
+//                .sorted(Comparator.comparing(ResumeAnalysisDTO::getMatchPercentage))
+//                .collect(Collectors.toList());
+//       resumeRepository.saveAll(listOfResumes);
+//       return listOfResumeAnalysisDto;
+//
+//    }
+ @Transactional
+public List<ResumeAnalysisDTO> resumeScreenAI(List<Resume> resumes, String jobRole) {
 
-                })
-                .sorted(Comparator.comparing(ResumeAnalysisDTO::getMatchPercentage))
-                .collect(Collectors.toList());
-       resumeRepository.saveAll(listOfResumes);
-       return listOfResumeAnalysisDto;
+    // 🔥 Trigger ALL AI calls concurrently
+    List<CompletableFuture<ResumeAnalysisDTO>> futures = resumes.stream()
+            .map(resume -> analyzeSingleResumeAsync(resume, jobRole))
+            .collect(Collectors.toList());
 
-    }
+    // 🔥 Wait for all to finish (non-blocking internally)
+    List<ResumeAnalysisDTO> result = futures.stream()
+            .map(CompletableFuture::join)
+            .sorted(Comparator.comparing(ResumeAnalysisDTO::getMatchPercentage).reversed())
+            .collect(Collectors.toList());
+
+    // Update resume scanned flag
+    resumeRepository.saveAll(resumes);
+    //     convert the list of ResumeAnalysisDTO to ResumeAnalysisEntity
+    List<ResumeAnalysisEntity> resumeAnalysisEntityList = result.stream()
+            .map((dto) ->{
+                try {
+                    ResumeAnalysisEntity entity = modelMapper.map(dto, ResumeAnalysisEntity.class);
+                    entity.setId(null);
+                    entity.setAnalysizedTime(LocalDateTime.now());
+                    entity.setResume(dto.getResume());
+                    return  entity;
+                }catch (JsonProcessingRuntimeException e){
+                    throw new JsonProcessingRuntimeException("Invalid json format");
+                }
+                // resumeAnalysis.save(entity);
+
+
+            } )
+            .collect(Collectors.toList());
+     // save the resume analysis entity
+    resumeAnalysis.saveAll(resumeAnalysisEntityList);
+
+    return result;
+}
+
     @Override
     public Resource dowloadResume(long resumeId) {
         Optional<Resume> resume = resumeRepository.findById(resumeId);
         Resource resource = null;
-        if(resume.isPresent()){
-            Path filePath = Paths.get(resume.get().getFilePath());
-             resource = new FileSystemResource(filePath);
-        }
 
-        return resource;
+            if (resume.isPresent()) {
+                Path filePath = Paths.get(resume.get().getFilePath());
+                File file = filePath.toFile();
+                if (!file.exists()){
+                    throw new FileNotFoundEx("File not found");
+                }
+                resource = new FileSystemResource(filePath);
+
+            }
+            return resource;
+
     }
 
     @Override
     public List<Resume> getAllResumes() {
          return resumeRepository.findAll();
     }
+
+    @Override
+    public List<String> getSuggestions(String query) {
+        List<String> suggestions = resumeRepository.getSuggestions(query);
+        return suggestions;
+    }
+
+    @Override
+    public List<Resume> findResumesBySkillName(String skillName,int currentPage, int pageSize) {
+         Page<Long> pageIds= resumeRepository.findResumeIdsBySkill(skillName, PageRequest.of(currentPage, pageSize));
+        List<Resume> resumesWithSkills = new ArrayList<Resume>();
+         if(pageIds.isEmpty()){
+             return  resumesWithSkills;
+         }
+         resumesWithSkills = resumeRepository.findResumesWithSkills(pageIds.toList());
+
+
+        return resumesWithSkills;
+    }
+
+    /**
+     * call the ai service  asynchronously for increasing the performance
+     *
+     */
+
+    @Async
+    public CompletableFuture<ResumeAnalysisDTO> analyzeSingleResumeAsync(Resume resume, String jobRole) {
+        try {
+
+            String skills = resume.getSkills()
+                    .stream()
+                    .map(Skill::getName)
+                    .collect(Collectors.joining(", "));
+
+            String tempResumeText = """
+                Name: %s
+                Skills: %s
+                Experience: %s years
+                Address: %s
+                """.formatted(
+                    resume.getName(),
+                    skills,
+                    resume.getYearsOfExperience(),
+                    resume.getAddress()
+            );
+
+            String template = resumeHelper.loadPromptTemplate("prompts/resumeScreeningMatcher.txt");
+            String prompt = resumeHelper.putValuesToPrompt(
+                    template,
+                    Map.of("resumeText", tempResumeText, "jobRole", jobRole)
+            );
+
+            // 🔥 AI call (1 per resume)
+            String aiResponse = aiApis.callAiService(prompt);
+
+            String validJson = resumeHelper.extractJson(aiResponse);
+            System.out.println("validJson ++++++++++++++++++++++++++++++");
+            System.out.println(validJson);
+
+            ResumeAnalysisDTO dto = new ObjectMapper().readValue(validJson, ResumeAnalysisDTO.class);
+            dto.setResume(resume);
+            System.out.println("dto ++++++++++++++++++++++++++++++");
+            System.out.println(dto);
+
+
+            resume.setScanAllresumesIsChecked(true);
+
+            return CompletableFuture.completedFuture(dto);
+
+        } catch (Exception e) {
+            throw new RuntimeException("AI processing failed", e);
+        }
+    }
+
+
+
+
 
 
 }

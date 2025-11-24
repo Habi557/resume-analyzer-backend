@@ -1,6 +1,5 @@
 package com.resume.backend.dtos;
 
-import com.resume.backend.entity.Resume;
 import com.resume.backend.entity.ResumeAnalysisEntity;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,6 +16,5 @@ public class DashboardDto {
     private int bestMatch;
     private double averageExperience;
     private ResumeAnalysisEntity resumeAnalysisEntity;
-
 
 }

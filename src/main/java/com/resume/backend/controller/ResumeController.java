@@ -55,7 +55,7 @@ public class ResumeController {
        // return ResponseEntity.ok(screenedResult);
     }
     @GetMapping("/getAllAnalysiedResumes")
-    public  ResponseEntity<List<ResumeAnalysisDTO>> getAllAnalysiedResumes(@RequestParam(name="pageNo" ,required = false,defaultValue = "0") int pageNo, @RequestParam(name="pageSize" ,required = false,defaultValue = "5") int pageSize){
+    public  ResponseEntity<List<ResumeAnalysisDTO>> getAllAnalysiedResumes(@RequestParam(required = true,defaultValue = "0") int pageNo, @RequestParam(name="pageSize" ,required = false,defaultValue = "5") int pageSize){
         List<ResumeAnalysisDTO> allAnalysiedResumes = resumeService.getAllAnalysiedResumes(pageNo,pageSize);
         return ResponseEntity.ok(allAnalysiedResumes);
     }
@@ -73,6 +73,10 @@ public class ResumeController {
     public ResponseEntity<List<Resume>> getAllResumes(){
         List<Resume> listofResume =resumeService.getAllResumes();
         return new ResponseEntity<List<Resume>>(listofResume,HttpStatus.OK);
+    }
+    @GetMapping("/test")
+    public  String test(){
+        return "test";
     }
 
 

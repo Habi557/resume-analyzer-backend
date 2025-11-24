@@ -10,6 +10,7 @@ import com.resume.backend.services.EmailService;
 import jakarta.mail.Message;
 import jakarta.mail.internet.InternetAddress;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessagePreparator;
 import org.springframework.stereotype.Service;
@@ -19,7 +20,6 @@ import org.thymeleaf.exceptions.TemplateInputException;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 
 @Service
@@ -67,6 +67,7 @@ public class EmailServiceImplementation implements EmailService {
             context.setVariables(model);
             templateName = templateName.trim();
             try {
+                //String meetingLink = MeetCreator.createMeetingLink();
                 String htmlContent = templateEngine.process(templateName, context);
                 message = mimeMessage -> {
                     mimeMessage.setRecipient(Message.RecipientType.TO, new InternetAddress(emailTo));
@@ -80,6 +81,12 @@ public class EmailServiceImplementation implements EmailService {
             }catch (TemplateInputException e){
                 throw  new TemplateInputException(" Email Template not found");
             }
+            catch (MailException e){
+                throw new RuntimeException("Ioexception occured");
+            }
+//            catch (GeneralSecurityException e){
+//                throw new RuntimeException("GeneralSecurityException occured");
+//            }
 
         }else{
             throw  new InvalidEmailException("Invalid Email");

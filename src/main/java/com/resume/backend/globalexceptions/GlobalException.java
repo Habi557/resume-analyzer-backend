@@ -1,15 +1,13 @@
 package com.resume.backend.globalexceptions;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.resume.backend.exceptions.AiNotRespondingException;
-import com.resume.backend.exceptions.InvaidFileFormatException;
-import com.resume.backend.exceptions.InvalidEmailException;
-import com.resume.backend.exceptions.JsonProcessingRuntimeException;
+import com.resume.backend.exceptions.*;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.thymeleaf.exceptions.TemplateInputException;
 
+import java.io.FileNotFoundException;
 import java.time.Instant;
 
 @ControllerAdvice
@@ -67,6 +65,12 @@ public class GlobalException {
         return ResponseEntity
                 .status(HttpStatus.SERVICE_UNAVAILABLE)
                 .body(ex.getMessage());
+    }
+    @ExceptionHandler(FileNotFoundEx.class)
+    public ResponseEntity<String> handleFileNotFoundEx(FileNotFoundEx ex) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ex.getMessage()+"Message from Habi");
     }
 
 
