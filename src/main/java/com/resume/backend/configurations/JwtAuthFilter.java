@@ -34,16 +34,37 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 		this.userDetailsService = userDetailsService;
 		this.tokenRepository = tokenRepository;
 	}
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        return path.startsWith("/auth")
+                || path.equals("/")
+                || path.equals("/health")
+                || path.startsWith("/error")
+                || path.startsWith("/favicon")
+                || path.contains("swagger")
+                || path.contains("api-docs");
+    }
+
+    @Override
+    protected boolean shouldNotFilterAsyncDispatch() {
+        return true;
+    }
+
+    @Override
+    protected boolean shouldNotFilterErrorDispatch() {
+        return true;
+    }
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
 		String servletPath = request.getServletPath();
 		System.out.println("PATH → " + servletPath);
-		if(servletPath.startsWith("/auth/login") || servletPath.startsWith("/auth/refreshToken") || servletPath.startsWith("/auth/logout")) {
-			filterChain.doFilter(request, response);
-			return;
-		}
+//		if(servletPath.startsWith("/auth/login") || servletPath.startsWith("/auth/refreshToken") || servletPath.startsWith("/auth/logout")) {
+//			filterChain.doFilter(request, response);
+//			return;
+//		}
 		String authHeader = request.getHeader("Authorization");
 		String token = null;
 		String username = null;
@@ -56,7 +77,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 			if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 				UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 				Boolean isStoredValid = tokenRepository.findByToken(token).map(t -> !t.isExpired() && !t.isRevoked()).orElse(false);
-				if (jwtService.validateToken(token, userDetails) && isStoredValid) {
+                tokenRepository.findByToken(token)
+                        .ifPresentOrElse(
+                                t -> System.out.println("DB TOKEN FOUND"),
+                                () -> System.out.println("DB TOKEN NOT FOUND")
+                        );
+				if (jwtService.validateToken(token, userDetails)) {
 					UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails,
 							null, userDetails.getAuthorities());
 					authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
@@ -67,7 +93,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
 		} catch (ExpiredJwtException e) {
 			System.out.println("token val");
-			handleExpiredToken(response, e);
+            SecurityContextHolder.clearContext();
+            throw new org.springframework.security.authentication.CredentialsExpiredException(
+                    "JWT token expired", e);
+			//handleExpiredToken(response, e);
 
 		} 
 

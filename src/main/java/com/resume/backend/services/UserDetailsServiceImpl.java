@@ -11,6 +11,7 @@ import com.resume.backend.repository.UserRepository;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -28,6 +29,7 @@ public class UserDetailsServiceImpl implements UserDetailsService{
 	UserRepository userRepository;
 	@Autowired
 	PasswordEncoder passwordEncoder;
+   // @Cacheable(value = "userDetails", key = "#username")
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 		// TODO Auto-generated method stub

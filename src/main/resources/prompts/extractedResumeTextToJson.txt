@@ -20,6 +20,17 @@ Definitions:
 - address → ONLY city name (do not include state/country).
 - skills → list of only technical skills.
 - yearsOfExperience → integer number (approximate if needed).
+Detect red flags using the following rules:
+- Missing name → add "Name missing"
+- Missing phone → add "Phone number missing"
+- Missing email → add "Email missing"
+- Missing skills → add "No technical skills mentioned"
+- Less than 1 year experience → add "Very low experience"
+- Education missing → add "Education details missing"
+- Address missing → add "City not mentioned"
+- Gaps > 6 months in experience → add "Employment gaps identified"
+- Inconsistent dates → add "Date inconsistencies found"
+- If any extracted field is empty → add "Incomplete profile information"
 - redFlags → list of issues like missing info, job gaps, no skills, inconsistent dates, etc.
 
 Resume:

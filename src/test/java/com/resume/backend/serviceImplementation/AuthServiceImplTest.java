@@ -3,6 +3,7 @@ package com.resume.backend.serviceImplementation;
 import com.resume.backend.configurations.JwtUtils;
 import com.resume.backend.dtos.AuthResponse;
 import com.resume.backend.dtos.LoginRequest;
+import com.resume.backend.entity.Role;
 import com.resume.backend.entity.Token;
 import com.resume.backend.entity.TokenType;
 import com.resume.backend.entity.UserEntity;
@@ -15,13 +16,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
 
 import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -42,59 +47,85 @@ public class AuthServiceImplTest {
 
     @Mock
     private UserRepository userRepository;
-
+    @Spy
     @InjectMocks
     private AuthServiceImpl authService;
 
     private LoginRequest loginRequest;
     private UserEntity testUser;
     private Authentication authentication;
+    private  Token token;
+    private List<Token> listOfTokens;
 
     @BeforeEach
     void setUp() {
-        loginRequest = new LoginRequest("testuser", "password");
+        loginRequest = new LoginRequest("habi", "habi123");
         testUser = new UserEntity();
         testUser.setId(1L);
-        testUser.setUsername("testuser");
-        testUser.setPassword("password");
+        testUser.setUsername("habi");
+        testUser.setPassword("habi123");
+        testUser.setRoles(Set.of(new Role(1l,"ROLE_USER"),new Role(2l,"ROLE_ADMIN")));
+        token = new Token();
+        token.setId(1L);
+        token.setToken("token");
+        token.setTokenType(TokenType.BEARER);
+        token.setExpired(false);
+        token.setRevoked(false);
+       listOfTokens= List.of(token);
 
         authentication = mock(Authentication.class);
-       when(authentication.getName()).thenReturn("testuser");
+      // List<SimpleGrantedAuthority> listOfRoles = List.of(new SimpleGrantedAuthority("ROLE_USER"));
+      // authentication.getAuthorities().stream().map(SimpleGrantedAuthority::getAuthority).toList();
+       //when(authentication.getAuthorities()).thenReturn(anyList());
 //        when(authentication.getAuthorities()).thenReturn(
 //                Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
 //        );
     }
 
+
     @Test
-    @Disabled
     void testLogin_Success() {
-        // Arrange
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenReturn(authentication);
+        when(authentication.getName()).thenReturn("habi");
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
+        when(jwtUtils.generateToken(anyString())).thenReturn("access_token");
+        when(jwtUtils.generateRefreshToken(anyString())).thenReturn("refresh_token");
+        when(userRepository.findByUserNameCaseSensitive(anyString())).thenReturn(testUser);
 
-        when(userRepository.findByUserNameCaseSensitive(anyString()))
-                .thenReturn(testUser);
+        // when(authService.revokeAllUserTokens(anyLong())).
 
-        when(jwtUtils.generateToken(nullable(String.class))).thenReturn("testAccessToken");
-        when(jwtUtils.generateRefreshToken(nullable(String.class))).thenReturn("testRefreshToken");
+        AuthResponse login = authService.login(loginRequest);
+        assertEquals("access_token", login.getAccessToken());
+        assertEquals("refresh_token", login.getRefreshToken());
+        assertEquals("Bearer", login.getTokenType());
+        assertEquals(1, login.getExpiresIn());
+        assertEquals("habi", login.getUsername());
+        assertEquals(2,login.getRoles().size());
+        assertTrue(login.getRoles().contains("ROLE_USER"));
+        assertTrue(login.getRoles().contains("ROLE_ADMIN"));
+        // verify that revokeAllUserTokens is called
+        verify(authService).revokeAllUserTokens(testUser.getId());
+        // verify that saveUserToken is called
+        verify(authService).saveUserToken(testUser, "access_token");
 
-        // Act
-        AuthResponse response = authService.login(loginRequest);
+    }
+    @Test
+    void testRefreshToken_Success() {
+        when(jwtUtils.extractUsername(anyString())).thenReturn("habi");
+        when(userRepository.findByUserNameCaseSensitive(anyString())).thenReturn(testUser);
+        when(jwtUtils.validateToken(anyString(), any(User.class))).thenReturn(true);
+        when(jwtUtils.generateToken(anyString())).thenReturn("access_token");
 
-        // Assert
-        assertNotNull(response);
-        assertEquals("testAccessToken", response.getAccessToken());
-        assertEquals("testRefreshToken", response.getRefreshToken());
-        assertFalse(response.getRoles().isEmpty());
+        AuthResponse authResponse = authService.refreshToken("refresh_token");
+        assertEquals("access_token", authResponse.getAccessToken());
+        assertEquals("refresh_token", authResponse.getRefreshToken());
+        assertEquals("Bearer", authResponse.getTokenType());
+        assertEquals(1, authResponse.getExpiresIn());
+        assertEquals("habi", authResponse.getUsername());
+        assertTrue(authResponse.getRoles().contains("ROLE_USER"));
+        assertTrue(authResponse.getRoles().contains("ROLE_ADMIN"));
+        verify(authService).revokeAllUserTokens(anyLong());
+        verify(authService).saveUserToken(testUser, "access_token");
 
-        // Verify token was saved
-        ArgumentCaptor<Token> tokenCaptor = ArgumentCaptor.forClass(Token.class);
-        verify(tokenRepository).save(tokenCaptor.capture());
-        Token savedToken = tokenCaptor.getValue();
-        assertEquals("testAccessToken", savedToken.getToken());
-        assertEquals(testUser, savedToken.getUser());
-        assertEquals(TokenType.BEARER, savedToken.getTokenType());
-        assertFalse(savedToken.isExpired());
-        assertFalse(savedToken.isRevoked());
+
     }
 }

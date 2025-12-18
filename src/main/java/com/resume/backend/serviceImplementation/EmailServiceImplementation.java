@@ -7,6 +7,7 @@ import com.resume.backend.helperclass.ResumeHelper;
 import com.resume.backend.repository.ResumeAnalysis;
 import com.resume.backend.repository.ResumeRepository;
 import com.resume.backend.services.EmailService;
+import com.resume.backend.services.JitsiMeetingService;
 import jakarta.mail.Message;
 import jakarta.mail.internet.InternetAddress;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,14 +31,16 @@ public class EmailServiceImplementation implements EmailService {
     private ResumeRepository resumeRepository;
     private ResumeAnalysis resumeAnalysisRepo;
     private ResumeHelper resumeHelper;
+    JitsiMeetingService jitsiMeetingService;
 
     @Autowired
-     public  EmailServiceImplementation(JavaMailSender mailSender, TemplateEngine templateEngine, ResumeRepository resumeRepository,ResumeAnalysis resumeAnalysisRepo, ResumeHelper resumeHelper) {
+     public  EmailServiceImplementation(JavaMailSender mailSender, TemplateEngine templateEngine, ResumeRepository resumeRepository,ResumeAnalysis resumeAnalysisRepo, ResumeHelper resumeHelper,JitsiMeetingService jitsiMeetingService) {
         this.mailSender = mailSender;
         this.templateEngine = templateEngine;
         this.resumeRepository= resumeRepository;
         this.resumeAnalysisRepo=resumeAnalysisRepo;
         this.resumeHelper=resumeHelper;
+        this.jitsiMeetingService=jitsiMeetingService;
     }
 
     public boolean sendEmail(Long id, String templateName, String interviewDate, String interviewTime, String interviewMode ) {
@@ -67,7 +70,15 @@ public class EmailServiceImplementation implements EmailService {
             context.setVariables(model);
             templateName = templateName.trim();
             try {
-                //String meetingLink = MeetCreator.createMeetingLink();
+                String meetingLink = jitsiMeetingService.generateMeetingLink("venkat", resume.getName());
+                context.setVariable("confirmationLink", meetingLink);
+                if(templateName.equals("Scheduled for Interview")){
+                    templateName = "interview_scheduled";
+                }else if(templateName.equals("Rejected")){
+                    templateName="rejected";
+                }else if(templateName.equals("Selected")){
+                    templateName = "selected";
+                }
                 String htmlContent = templateEngine.process(templateName, context);
                 message = mimeMessage -> {
                     mimeMessage.setRecipient(Message.RecipientType.TO, new InternetAddress(emailTo));

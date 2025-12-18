@@ -2,12 +2,15 @@ package com.resume.backend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.resume.backend.dtos.ResumeAnalysisDTO;
+import com.resume.backend.dtos.ResumeTempDto;
 import com.resume.backend.entity.Resume;
 import com.resume.backend.entity.ResumeAnalysisEntity;
 import com.resume.backend.entity.Skill;
+import com.resume.backend.helperclass.ConvertingEntityToDtos;
 import com.resume.backend.repository.SkillRepository;
 import com.resume.backend.services.ResumeService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,15 +24,17 @@ import java.util.stream.Stream;
 @RestController
 @RequestMapping("/search")
 public class SearchSuggestionController {
+    private  ConvertingEntityToDtos convertingEntityToDtos;
     private ResumeService resumeService;
     private SkillRepository skillRepository;
 
-    SearchSuggestionController(ResumeService resumeService, SkillRepository skillRepository) {
+    SearchSuggestionController(ResumeService resumeService, SkillRepository skillRepository,ConvertingEntityToDtos convertingEntityToDtos) {
         this.resumeService = resumeService;
         this.skillRepository = skillRepository;
+        this.convertingEntityToDtos=convertingEntityToDtos;
     }
 
-    @GetMapping("/suggestions")
+    @GetMapping(value = "/suggestions" ,produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<String>> getSuggestions(@RequestParam("query") String query) {
         {
             System.out.println("query "+query);
@@ -52,7 +57,9 @@ public class SearchSuggestionController {
                 .flatMap(List::stream)
                 .map(ra -> {
                    // ResumeAnalysisDTO resumeAnalysisDTO = new ObjectMapper().convertValue(ra, ResumeAnalysisDTO.class);
-                    ResumeAnalysisDTO analysisDTO = new ResumeAnalysisDTO(ra.getId(), ra.getMatchPercentage(), ra.getSuggestions(), ra.getConclusion(), ra.getAnalysizedTime(), ra.getTopMatchingSkills(), ra.getResume(), ra.getInterviewDate(), ra.getInterviewTime(), ra.getSelectedStatus());
+                   Resume resume= ra.getResume();
+                   ResumeTempDto resumeTempDto= convertingEntityToDtos.convertResumeDto(resume);
+                    ResumeAnalysisDTO analysisDTO = new ResumeAnalysisDTO(ra.getId(), ra.getMatchPercentage(), ra.getSuggestions(), ra.getConclusion(), ra.getAnalysizedTime(), ra.getTopMatchingSkills(), resumeTempDto, ra.getInterviewDate(), ra.getInterviewTime(), ra.getInterviewMode(), ra.getSelectedStatus());
                     return analysisDTO;
                 })
                 .collect(Collectors.toList());

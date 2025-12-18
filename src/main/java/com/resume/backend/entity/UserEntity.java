@@ -3,7 +3,9 @@ package com.resume.backend.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 @Entity
 @Table(name = "users")
@@ -25,6 +27,8 @@ public class UserEntity {
 
     @Column(unique = true, length = 100)
     private String email;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Resume> resumes = new ArrayList<>();
 
     @Column(nullable = false)
     private boolean enabled = true;

@@ -44,36 +44,35 @@ public class AuthServiceImpl  implements AuthService {
         UserEntity user = userRepository.findByUserNameCaseSensitive(authenticate.getName());
         revokeAllUserTokens(user.getId());
         saveUserToken(user, accessToken);
+        List<String> listOfRoles = user.getRoles().stream().map(role -> role.getRoleName()).map(roleName -> new String(roleName)).toList();
 
-        AuthResponse authResponse = AuthResponse.builder().roles(authenticate.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList())
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .tokenType("Bearer")
-                .expiresIn(1)
-                .username(authenticate.getName())
-                .build();
-        return authResponse;
+//        AuthResponse authResponse = AuthResponse.builder().roles(listOfRoles)
+//                .accessToken(accessToken)
+//                .refreshToken(refreshToken)
+//                .tokenType("Bearer")
+//                .expiresIn(1)
+//                .username(authenticate.getName())
+//                .build();
+        return buildAuthResponse(listOfRoles,accessToken,refreshToken,authenticate.getName());
+        //return authResponse;
     }
+
+
+
     public AuthResponse refreshToken(String refreshToken) {
         try {
             String username = jwtUtils.extractUsername(refreshToken);
             UserEntity userEntity = userRepository.findByUserNameCaseSensitive(username);
-            List<SimpleGrantedAuthority> listOfRoles = userEntity.getRoles().stream().map(role -> role.getRoleName()).map(roleName -> new SimpleGrantedAuthority(roleName)).toList();
-            User user = new User(userEntity.getUsername(), userEntity.getPassword(), listOfRoles);
+            List<String> listOfRoles = userEntity.getRoles().stream().map(role -> role.getRoleName()).map(roleName -> new String(roleName)).toList();
+            List<SimpleGrantedAuthority> listOfSimpleGrantedAuthority = listOfRoles.stream().map(roleName -> new SimpleGrantedAuthority(roleName)).toList();
+            User user = new User(username, userEntity.getPassword(), listOfSimpleGrantedAuthority);
             if (!jwtUtils.validateToken(refreshToken, user)) {
                 throw new TokenExpiredException("Refresh token is not valid");
             }
-            String accessToken = jwtUtils.generateToken(userEntity.getUsername());
+            String accessToken = jwtUtils.generateToken(username);
             revokeAllUserTokens(userEntity.getId());
             saveUserToken(userEntity, accessToken);
-
-            return AuthResponse.builder().roles(userEntity.getRoles().stream().map(role -> role.getRoleName()).toList())
-                    .accessToken(accessToken)
-                    .refreshToken(refreshToken)
-                    .tokenType("Bearer")
-                    .expiresIn(1)
-                    .username(userEntity.getUsername())
-                    .build();
+            return buildAuthResponse(listOfRoles,accessToken,refreshToken, username);
         }catch (ExpiredJwtException ex){
             throw new TokenExpiredException("Refresh token is expired Login agian");
         }
@@ -91,7 +90,7 @@ public class AuthServiceImpl  implements AuthService {
         }
     }
 
-    private void saveUserToken(UserEntity user, String accessToken) {
+    public void saveUserToken(UserEntity user, String accessToken) {
         Token token = Token.builder()
                 .user(user)
                 .token(accessToken)
@@ -102,7 +101,7 @@ public class AuthServiceImpl  implements AuthService {
         tokenRepository.save(token);
     }
 
-    private void revokeAllUserTokens(Long userId) {
+    public void revokeAllUserTokens(Long userId) {
         List<Token> tokens = tokenRepository.findAllByUserIdAndExpiredFalseAndRevokedFalse(userId);
         if (tokens.isEmpty()) {
             return;
@@ -112,5 +111,14 @@ public class AuthServiceImpl  implements AuthService {
             token.setRevoked(true);
         });
         tokenRepository.saveAll(tokens);
+    }
+    private AuthResponse buildAuthResponse(List<String> listOfRoles, String accessToken, String refreshToken, String name) {
+        return AuthResponse.builder().roles(listOfRoles)
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .tokenType("Bearer")
+                .expiresIn(1)
+                .username(name)
+                .build();
     }
 }

@@ -29,7 +29,7 @@ public class ResumeAnalysisDTO {
     @JsonProperty("topMatchingSkills")
     private List<String> topMatchingSkills;
     @JsonProperty("resume_id")
-    private Resume resume;
+    private ResumeTempDto resume;
     @JsonProperty("interviewDate")
     private String interviewDate;
     @JsonProperty("interviewTime")
@@ -41,8 +41,8 @@ public class ResumeAnalysisDTO {
 
     public ResumeAnalysisDTO(Long id, int matchPercentage, List<String> suggestions,
                              String conclusion, LocalDateTime analysizedTime,
-                             List<String> topMatchingSkills, Resume resume,
-                             String interviewDate, String interviewTime,
+                             List<String> topMatchingSkills, ResumeTempDto resume,
+                             String interviewDate, String interviewTime,String interviewMode,
                              String selectedStatus) {
         this.id = id;
         this.matchPercentage = matchPercentage;
@@ -53,6 +53,7 @@ public class ResumeAnalysisDTO {
         this.resume = resume;
         this.interviewDate = interviewDate;
         this.interviewTime = interviewTime;
+        this.interviewMode=interviewMode;
         this.selectedStatus = selectedStatus;
     }
 }

@@ -20,8 +20,10 @@ public class Resume {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(name="user_id")
-    private Long userId;
+    //@Column(name="user_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private UserEntity user;
     @JsonProperty("name")
     @Column(name = "canditate_name")
     private String  name;
@@ -70,6 +72,8 @@ public class Resume {
     @ToString.Exclude // ✅ prevents stack overflow
     @JsonManagedReference("resume-analysis")
     private List<ResumeAnalysisEntity> resumeAnalysisList;
+    @Column(name="status")
+    private String status;
 
 
 

@@ -15,6 +15,6 @@ public class DashboardDto {
     private long canditateScanned;
     private int bestMatch;
     private double averageExperience;
-    private ResumeAnalysisEntity resumeAnalysisEntity;
+    private ResumeAnalysisDTO resumeAnalysisDTO;
 
 }

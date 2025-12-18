@@ -37,11 +37,9 @@ public class ResumeAnalysisEntity {
     @Convert(converter = StringListConverter.class)
     @Column(name = "top_matching_skills", columnDefinition = "LONGTEXT")
     private List<String> topMatchingSkills;
-//    @Column(name = "aiRecommendation")
-//    private  String
     @ManyToOne
     @JoinColumn(name = "resume_id", referencedColumnName = "id")
-    @ToString.Exclude // ✅ prevents stack overflow
+    @ToString.Exclude
     @JsonBackReference("resume-analysis")
     private Resume resume;
     @Column(name="interviewDate")

@@ -61,7 +61,7 @@ public class ChatbotImplementation implements ChatbotService {
     public String getAnswer(String message) {
         try {
             // Step 1: Load and inject prompt
-            String template = resumeHelper.loadPromptTemplate("prompts/chatbotAnalysisTextToJson.txt");
+            String template = resumeHelper.loadPromptTemplate2("prompts/chatbotAnalysisTextToJson.txt");
             String prompt = resumeHelper.putValuesToPrompt(template, Map.of("query", message));
 
             // Step 2: Call AI and extract JSON

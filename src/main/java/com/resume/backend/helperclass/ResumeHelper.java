@@ -15,7 +15,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -31,12 +34,34 @@ public class ResumeHelper {
             return stripper.getText(document);
         }
     }
-    public String extractTextFromDocx(MultipartFile file) throws IOException {
-        try (XWPFDocument doc = new XWPFDocument(file.getInputStream())) {
-            XWPFWordExtractor extractor = new XWPFWordExtractor(doc);
+    public String extractTextFromPdf(InputStream inputStream) throws IOException {
+        try (PDDocument document = PDDocument.load(inputStream)) {
+            PDFTextStripper stripper = new PDFTextStripper();
+            return stripper.getText(document);
+        }
+    }
+//    public String extractTextFromDocx(MultipartFile file) throws IOException {
+//        try (XWPFDocument doc = new XWPFDocument(file.getInputStream())) {
+//            XWPFWordExtractor extractor = new XWPFWordExtractor(doc);
+//            return extractor.getText();
+//        }
+//    }
+public String extractTextFromDocx(File savedFile) throws IOException {
+    try (FileInputStream fis = new FileInputStream(savedFile);
+         XWPFDocument doc = new XWPFDocument(fis);
+         XWPFWordExtractor extractor = new XWPFWordExtractor(doc)) {
+
+        return extractor.getText();
+    }
+}
+    public String extractTextFromDocx(InputStream inputStream) throws IOException {
+        try (XWPFDocument doc = new XWPFDocument(inputStream);
+             XWPFWordExtractor extractor = new XWPFWordExtractor(doc)) {
+
             return extractor.getText();
         }
     }
+
     public  String extractJson(String content) {
         // Remove <think> blocks
         String noThink = content.replaceAll("(?s)<think>.*?</think>", "");
@@ -54,6 +79,13 @@ public class ResumeHelper {
         Path path = new ClassPathResource(filename).getFile().toPath();
         return Files.readString(path);
 
+    }
+    public String loadPromptTemplate2(String filename) {
+        try (InputStream is = new ClassPathResource(filename).getInputStream()) {
+            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load prompt template: " + filename, e);
+        }
     }
     // put values to prompt
     public  String putValuesToPrompt(String template, Map<String,String> values){

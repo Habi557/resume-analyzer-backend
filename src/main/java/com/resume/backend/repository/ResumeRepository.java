@@ -1,6 +1,7 @@
 package com.resume.backend.repository;
 
 import com.resume.backend.entity.Resume;
+import com.resume.backend.projection.ResumeProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,15 +15,37 @@ import java.util.List;
 @Repository
 public interface ResumeRepository extends JpaRepository<Resume,Long>, JpaSpecificationExecutor<Resume> {
     List<Resume> findByYearsOfExperience(double years);
-    @Query(value = """
-        SELECT  canditate_name FROM resume WHERE LOWER(canditate_name) LIKE %:query%
-        UNION
-        SELECT  email FROM resume WHERE LOWER(email) LIKE %:query%
-        UNION
-        SELECT  phone FROM resume WHERE LOWER(phone) LIKE %:query%
-        LIMIT 10
-        """, nativeQuery = true)
-    List<String> getSuggestions(@Param("query") String query);
+//    @Query(value = """
+//        SELECT  canditate_name FROM resume WHERE LOWER(canditate_name) LIKE %:query%
+//        UNION
+//        SELECT  email FROM resume WHERE LOWER(email) LIKE %:query%
+//        UNION
+//        SELECT  phone FROM resume WHERE LOWER(phone) LIKE %:query%
+//        LIMIT 10
+//        """, nativeQuery = true)
+//    List<String> getSuggestions(@Param("query") String query);
+@Query(value = """
+    SELECT canditate_name AS suggestion
+    FROM resume
+    WHERE LOWER(canditate_name) LIKE CONCAT('%', :query, '%')
+
+    UNION
+
+    SELECT email AS suggestion
+    FROM resume
+    WHERE LOWER(email) LIKE CONCAT('%', :query, '%')
+
+    UNION
+
+    SELECT CAST(phone AS CHAR) AS suggestion
+    FROM resume
+    WHERE CAST(phone AS CHAR) LIKE CONCAT('%', :query, '%')
+
+    LIMIT 10
+    """, nativeQuery = true)
+List<String> getSuggestions(@Param("query") String query);
+
+
 
     @Query("SELECT DISTINCT r.id FROM Resume r JOIN r.skills s WHERE LOWER(s.name) LIKE LOWER(CONCAT('%', :skillName, '%'))")
     Page<Long> findResumeIdsBySkill(@Param("skillName") String skillName, Pageable pageable);
@@ -35,4 +58,6 @@ public interface ResumeRepository extends JpaRepository<Resume,Long>, JpaSpecifi
 
     //  SELECT DISTINCT skill FROM resume WHERE LOWER(skill) LIKE %:query%
     //        UNION
+    @Query("SELECT r.id as id, r.originalFileName as originalFileName , r.name as name FROM Resume r")
+    List<ResumeProjection> findAllResumes();
 }
