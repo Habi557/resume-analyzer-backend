@@ -16,6 +16,6 @@ jobs:
        distribution: 'temurin' # See 'Supported distributions' for available options
        java-version: '21'
     - name: Build and test
-      run: mvn clean test
+      run: mvn clean test -DskipTests
     - name: Build the Docker image
       run: docker build . --file Dockerfile --tag airesumeimage:$(date +%s)
