@@ -22,11 +22,15 @@ public class UserEntity {
     @Column(nullable = false, unique = true, length = 50)
     private String username;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String password;
 
-    @Column(unique = true, length = 100)
+    @Column(nullable = false, unique = true, length = 100)
     private String email;
+    @Column(nullable = false)
+    private String provider;
+    @Column(unique = true)
+    private String providerId;
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Resume> resumes = new ArrayList<>();
 

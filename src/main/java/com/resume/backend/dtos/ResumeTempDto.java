@@ -19,7 +19,7 @@ public class ResumeTempDto {
     private String address;
     //private List<String> skills;
     private List<SkillDto> skills;
-    private String education;
+    private List<EducationJson> education;
     private double yearsOfExperience;
     private List<String> redFlags;
 }

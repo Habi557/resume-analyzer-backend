@@ -7,24 +7,23 @@ import com.resume.backend.services.StorageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.UUID;
-import java.io.File;
 
 
 @Service
-@ConditionalOnProperty(name = "storage.type", havingValue = "local")
+//@ConditionalOnProperty(name = "storage.type", havingValue = "local")
+@Profile({"dev","docker"})
 public class LocalStorageService implements StorageService {
 
     @Value("${upload.dir}")

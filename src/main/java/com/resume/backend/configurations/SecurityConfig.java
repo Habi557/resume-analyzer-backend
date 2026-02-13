@@ -8,7 +8,10 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.oauth2.client.OAuth2LoginConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -26,8 +29,12 @@ import java.util.List;
 public class SecurityConfig {
 
     private JwtAuthFilter jwtAuthFilter;
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
+    private AuthenticationSuccessHandler oAuth2SuccessHandler;
+    private AuthenticationFailureHandler authenticationFailureHandler;
+    public SecurityConfig(JwtAuthFilter jwtAuthFilter, AuthenticationSuccessHandler authenticationSuccessHandler, AuthenticationFailureHandler authenticationFailureHandler) {
         this.jwtAuthFilter = jwtAuthFilter;
+        this.oAuth2SuccessHandler=authenticationSuccessHandler;
+        this.authenticationFailureHandler=authenticationFailureHandler;
     }
 
     @Bean
@@ -35,19 +42,25 @@ public class SecurityConfig {
         http
                 .cors(cors ->cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
+               // .csrf(csrf -> csrf
+                        //.ignoringRequestMatchers("/auth/login","/auth/refreshToken","/auth/logout","/auth/register","/user/getUserAnalyisedDetails","/oauth2/authorization/google","/login/oauth2/code/google","/oauth-success","/ai/upload"))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/login","/auth/refreshToken","/auth/logout","/user/getUserAnalyisedDetails","/ai/test").permitAll()
+                        .requestMatchers("/auth/login","/auth/refreshToken","/auth/logout","/auth/register","/user/getUserAnalyisedDetails", "/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers("/", "/health", "/actuator/health").permitAll()
-                        .requestMatchers("/ai/screen-resume","/editResumeDetails/edit").hasRole("ADMIN")
+                        //.requestMatchers("/ai/upload").hasAnyRole("USER","ADMIN")
+                         .requestMatchers("/ai/screen-resume").hasRole("ADMIN")
                         .requestMatchers("/chatbot/query").hasAnyRole("ADMIN")
-                       // .requestMatchers("/user/getUserAnalyisedDetails").hasAnyRole("USER","ADMIN")
-
-                       // .requestMatchers("/ai/**").hasRole("USER")
                         .anyRequest().authenticated())
+                .oauth2Login(oauth2->
+                        //oauth2.loginPage("/oauth2/authorization/google")
+                        oauth2.successHandler(oAuth2SuccessHandler)
+                                .failureHandler(authenticationFailureHandler)
+                        )
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
                 .exceptionHandling(exception -> exception.accessDeniedHandler(new CustomAccessDeniedHandler()).authenticationEntryPoint(new JwtAuthenticationEntryPoint()))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
-                //.oauth2Login(Customizer.withDefaults())
-                //.logout(logout -> logout.logoutSuccessUrl("/").permitAll());
+
 
         return http.build();
     }

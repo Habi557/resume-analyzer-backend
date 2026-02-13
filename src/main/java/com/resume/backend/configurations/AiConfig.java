@@ -17,6 +17,7 @@ public class AiConfig {
     public ChatClient chatClient(OllamaChatModel ollamaChatModel) {
         return ChatClient.builder(ollamaChatModel).build();
     }
+
     @Bean
     public ModelMapper modelMapper() {
         return new ModelMapper();

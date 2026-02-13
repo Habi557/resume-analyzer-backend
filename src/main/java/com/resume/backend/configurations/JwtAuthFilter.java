@@ -3,9 +3,13 @@ package com.resume.backend.configurations;
 import java.io.IOException;
 import java.util.List;
 
+import com.resume.backend.exceptions.JwtExpiredAuthenticationException;
 import com.resume.backend.repository.TokenRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.CredentialsExpiredException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -22,6 +26,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+@Slf4j
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
@@ -40,10 +45,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         return path.startsWith("/auth")
                 || path.equals("/")
                 || path.equals("/health")
-                || path.startsWith("/error")
-                || path.startsWith("/favicon")
-                || path.contains("swagger")
-                || path.contains("api-docs");
+                || path.contains("/oauth2")
+                || path.contains("/login/oauth2")
+                || path.contains("/oauth-success")
+                ;
     }
 
     @Override
@@ -60,12 +65,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
 		String servletPath = request.getServletPath();
-		System.out.println("PATH → " + servletPath);
+        log.debug("PATH {}",servletPath);
 //		if(servletPath.startsWith("/auth/login") || servletPath.startsWith("/auth/refreshToken") || servletPath.startsWith("/auth/logout")) {
 //			filterChain.doFilter(request, response);
 //			return;
 //		}
-		String authHeader = request.getHeader("Authorization");
+
+        String authHeader = request.getHeader("Authorization");
 		String token = null;
 		String username = null;
 		try {
@@ -89,25 +95,35 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 					SecurityContextHolder.getContext().setAuthentication(authToken);
 				}
 			}
-			filterChain.doFilter(request, response);
+            filterChain.doFilter(request, response);
 
-		} catch (ExpiredJwtException e) {
-			System.out.println("token val");
+
+        } catch (ExpiredJwtException e) {
             SecurityContextHolder.clearContext();
-            throw new org.springframework.security.authentication.CredentialsExpiredException(
-                    "JWT token expired", e);
+            request.setAttribute("JWT_EXPIRED", true);
+            filterChain.doFilter(request, response);
+            return;
+           // throw new CredentialsExpiredException("JWT token expired", e);
 			//handleExpiredToken(response, e);
 
-		} 
+		}
 
-	}
+
+    }
 
 	// Custom method to handle expired tokens
 	private void handleExpiredToken(HttpServletResponse response, ExpiredJwtException e) throws IOException {
 		 response.setContentType("application/json");
 	        response.setCharacterEncoding("UTF-8");
 	        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-	        response.getWriter().write("Token Expired Login again");
+            String json = """
+                       {
+                                "status": 401,
+                                "error": "UNAUTHORIZED",
+                                "message": "Token expired. Please login again."
+                              }
+                    """;
+	        response.getWriter().write(json);
 	        
 	}
 

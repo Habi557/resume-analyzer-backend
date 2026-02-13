@@ -25,7 +25,7 @@ public interface ResumeService {
 
     FileDownloadDataDto dowloadResume(long resumeId);
 
-    List<ResumeProjection> getAllResumes();
+    List<ResumeProjection> getAllResumes(int pageNo,int pagesize);
 
     List<String> getSuggestions(String query);
 

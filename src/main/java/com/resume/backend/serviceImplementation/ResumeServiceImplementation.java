@@ -1,13 +1,12 @@
 package com.resume.backend.serviceImplementation;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.resume.backend.configurations.AiConfig;
 import com.resume.backend.dtos.*;
-import com.resume.backend.entity.Resume;
-import com.resume.backend.entity.ResumeAnalysisEntity;
-import com.resume.backend.entity.Skill;
-import com.resume.backend.entity.UserEntity;
+import com.resume.backend.entity.*;
 import com.resume.backend.exceptions.AiNotRespondingException;
 import com.resume.backend.exceptions.FileNotFoundEx;
 import com.resume.backend.exceptions.InvaidFileFormatException;
@@ -15,6 +14,7 @@ import com.resume.backend.exceptions.JsonProcessingRuntimeException;
 import com.resume.backend.helperclass.AiApis;
 import com.resume.backend.helperclass.ConvertingEntityToDtos;
 import com.resume.backend.helperclass.ResumeHelper;
+import com.resume.backend.helperclass.ResumeSection;
 import com.resume.backend.projection.ResumeProjection;
 import com.resume.backend.repository.ResumeAnalysis;
 import com.resume.backend.repository.ResumeRepository;
@@ -22,6 +22,7 @@ import com.resume.backend.repository.UserRepository;
 import com.resume.backend.services.ResumeService;
 import com.resume.backend.services.StorageService;
 import jakarta.persistence.EntityNotFoundException;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -92,24 +93,11 @@ public class ResumeServiceImplementation implements ResumeService {
 
         return "test";
     }
-
+    @Transactional(rollbackFor = {Exception.class})
     @Override
     public Resume uploadResume(String username, MultipartFile file)  {
 
             try {
-                // Ensure the upload directory exists
-//                File directory = new File(uploadDir);
-//                if (!directory.exists()) {
-//                    directory.mkdirs(); // creates the full path if it doesn't exist
-//                }
-                // Generate unique file path
-//                String originalFilename = file.getOriginalFilename();
-//                String uniqueFileName = UUID.randomUUID() + "_" + originalFilename;
-//                String filePath = uploadDir + "/" + uniqueFileName;
-
-                // Save the file to disk
-//                File savedFile = new File(filePath);
-//                file.transferTo(savedFile);
                 String originalFilename = file.getOriginalFilename().toLowerCase();
 
                 // Save file (local OR S3 depending on environment)
@@ -124,75 +112,11 @@ public class ResumeServiceImplementation implements ResumeService {
                 resume2.setFilePath(savedFilePathOrKey);
                 resume2.setUploadTime(LocalDateTime.now());
                 resume2.setUser(user);
-                resume2.setStatus("PROCESSING");
+                resume2.setStatus(ResumeStatus.PROCESSING);
                 resumeRepository.save(resume2);
-                // 3️⃣ Trigger async AI processing
-                processResumeAsync(resume2.getId());
+                // Trigger async AI processing
+                processResumeAsync(resume2.getId(),file);
                 return resume2;
-//
-//                // Extract text from InputStream (works for both local and S3)
-//                InputStream savedFile = storageService.loadFile(savedFilePathOrKey);
-//
-//                // Extract text using Apache PDFBox
-//                // String extractedText = resumeHelper.extractTextFromPdf(savedFile);
-//                String extractedText;
-//                if (file.getOriginalFilename().endsWith(".pdf")) {
-//                    extractedText = resumeHelper.extractTextFromPdf(savedFile);
-//                } else if (file.getOriginalFilename().endsWith(".docx")) {
-//                    extractedText = resumeHelper.extractTextFromDocx(savedFile);
-//                } else {
-//                    throw new InvaidFileFormatException("Unsupported File Format");
-//                }
-//                System.out.println("//////////////////////////////////");
-//                // Extract Josn from resumText using AI Model
-//                String template = resumeHelper.loadPromptTemplate2("prompts/extractedResumeTextToJson.txt");
-//                String finalResumeTextPrompt = resumeHelper.putValuesToPrompt(template, Map.of("resumeText", extractedText));
-//
-//                try{
-//                   // String aiOutputJson  = this.chatClient.prompt(finalResumeTextPrompt).call().chatResponse().getResult().getOutput().getContent();
-//                    String aiOutputJson = aiApis.callAiService(finalResumeTextPrompt);
-//                    String validJsonString = resumeHelper.extractJson(aiOutputJson);
-//                    AiResumeTempDto resumeTempDto = new ObjectMapper().readValue(validJsonString, AiResumeTempDto.class);
-//                   //  Save resume details in DB
-//                    Resume resume = new Resume();
-//                   // resume.setUserId(userId);
-//                    UserEntity user = userRepository.findByUserNameCaseSensitive(username);
-//                    if(user==null){
-//                        throw new EntityNotFoundException("User not found");
-//                    }
-//                    resume.setUser(user);
-//                    resume.setOriginalFileName(originalFilename);
-//                    resume.setFilePath(savedFilePathOrKey);
-//                    resume.setExtractedText(extractedText);
-//                    resume.setUploadTime(LocalDateTime.now());
-//                    resume.setName(resumeTempDto.getName());
-//                    // resume.setExtractedSkills(resumeAnalysisDTO.getExtractedSkills());
-//                    List<Skill> listOfSkills = resumeTempDto.getSkills().stream().map(skillName -> {
-//                        Skill skill = new Skill();
-//                        skill.setName(skillName);
-//                        skill.setResume(resume);
-//                        return skill;
-//                    }).collect(Collectors.toList());
-//                    resume.setSkills(listOfSkills);
-//                    resume.setYearsOfExperience(resumeTempDto.getYearsOfExperience());
-//                    resume.setAddress(resumeTempDto.getAddress());
-//                    resume.setEmail(resumeTempDto.getEmail());
-//                    resume.setPhone(resumeTempDto.getPhone());
-//                    if(resumeTempDto.getRedFlags().size() > 3){
-//                        resume.setRedFlags(resumeTempDto.getRedFlags().stream().limit(3).toList());
-//                    }
-//                    else{
-//                        resume.setRedFlags(resumeTempDto.getRedFlags());
-//                    }
-//                   // resume.setRedFlags(resumeTempDto.getRedFlags().stream().limit(3).toList());
-//
-//                    return resumeRepository.save(resume);
-//                }catch (RestClientException e){
-//                    throw new AiNotRespondingException("AI is not responding");
-//                }
-//                catch (JsonProcessingException e){
-//                    throw new JsonProcessingRuntimeException("Invalid JSON format response");
-//                }
 
             } catch (IOException e) {
                 throw new RuntimeException("Error occurred while saving or reading file", e);
@@ -223,6 +147,9 @@ public class ResumeServiceImplementation implements ResumeService {
    // @Cacheable(value = "getAllAnalysiedResumesDto", key = "#pageNo + ':' + #pageSize")
     @Override
     public List<ResumeAnalysisDTO> getAllAnalysiedResumes(int pageNo,int pageSize) {
+        if (pageNo<0){
+            pageNo=0;
+        }
 
         PageRequest pageRequest = PageRequest.of(pageNo, pageSize, Sort.by("id").descending());
         Page<ResumeAnalysisEntity> resumeAnalysisEntities = resumeAnalysis.findAll(pageRequest);
@@ -377,8 +304,10 @@ public class ResumeServiceImplementation implements ResumeService {
     }
 
     @Override
-    public List<ResumeProjection> getAllResumes() {
-       return resumeRepository.findAllResumes();
+    public List<ResumeProjection> getAllResumes(int pageNo,int pagesize) {
+        PageRequest pageRequest = PageRequest.of(pageNo, pagesize);
+        Page<ResumeProjection> allResumes = resumeRepository.findAllResumes(pageRequest);
+        return allResumes.getContent();
     }
    // @Cacheable(value ="suggestionSkills", key = "#query")
     @Override
@@ -437,7 +366,7 @@ public class ResumeServiceImplementation implements ResumeService {
 //                    Map.of("resumeText", tempResumeText, "jobRole", jobRole)
 //            );
 //
-//            // 🔥 AI call (1 per resume)
+//            //  AI call (1 per resume)
 //            String aiResponse = aiApis.callAiService(prompt);
 //
 //            String validJson = resumeHelper.extractJson(aiResponse);
@@ -510,13 +439,12 @@ public class ResumeServiceImplementation implements ResumeService {
         }
     }
     @Async
-    public void processResumeAsync(Long resumeId) {
-
+    public void processResumeAsync(Long resumeId,MultipartFile file) {
+        ObjectMapper objectMapper = new ObjectMapper();
         Resume resume = resumeRepository.findById(resumeId).orElseThrow();
-
         try (InputStream fileStream = storageService.loadFile(resume.getFilePath())) {
 
-            // 1️⃣ Extract text
+            // Extract text
             String extractedText;
             if (resume.getOriginalFileName().toLowerCase().endsWith(".pdf")) {
                 extractedText = resumeHelper.extractTextFromPdf(fileStream);
@@ -524,46 +452,93 @@ public class ResumeServiceImplementation implements ResumeService {
                 extractedText = resumeHelper.extractTextFromDocx(fileStream);
             }
 
-            // 2️⃣ Build AI prompt
-            String template = resumeHelper.loadPromptTemplate2("prompts/extractedResumeTextToJson.txt");
-            String prompt = resumeHelper.putValuesToPrompt(template, Map.of("resumeText", extractedText));
+            Map<ResumeSection, String> resumeSectionStringMap = resumeHelper.detectSections(extractedText);
+            ResumeJson resumeJson = resumeHelper.buildResumeJson(extractedText, resumeSectionStringMap);
+            EnumSet<Field> missingFields = resumeHelper.detectMissingFields(resumeJson);
+            if(!missingFields.isEmpty()){
+                // Build AI prompt
+                String prompt = resumeHelper.buildPromptFromEnum(missingFields, extractedText);
+                //  Call AI
+                 String aiOutput = aiApis.callAiService(prompt);
+                 String validJson = resumeHelper.extractJson(aiOutput);
+                Map<String, Object> aiMap = objectMapper.readValue(validJson, Map.class);
+                resumeJson = resumeHelper.mergeAiUsingEnum(resumeJson, aiMap, missingFields);
+                 String redFlagPrompt = resumeHelper.buildPromptForFlags(extractedText);
+                String redflags = aiApis.callAiService(redFlagPrompt);
+                String jsonString = resumeHelper.extractJson(redflags);
+                JsonNode rootNode = objectMapper.readTree(jsonString);
 
-            // 3️⃣ Call AI
-            String aiOutput = aiApis.callAiService(prompt);
-            String validJson = resumeHelper.extractJson(aiOutput);
+                resumeJson.setRedFlags(
+                        rootNode.has("redflags")
+                                ? objectMapper.convertValue(rootNode.get("redflags"),
+                                new TypeReference<List<String>>() {})
+                                : Collections.emptyList()
+                );
 
-            AiResumeTempDto dto =
-                    new ObjectMapper().readValue(validJson, AiResumeTempDto.class);
 
-            // 4️⃣ Update resume
+
+            }
+//            String header = resumeHelper.extractHeaderFromResume(extractedText);
+//            String name = resumeHelper.extractNameFromHeader(header);
+//            String email=resumeHelper.extractEamilFromHeader(header);
+//            String phone =resumeHelper.extractPhoneFromHeader(header);
+//
+//            String experiencText = resumeSectionStringMap.getOrDefault(ResumeSection.EXPERIENCE,"");
+//        String skillsText = resumeSectionStringMap.getOrDefault(ResumeSection.SKILLS,"");
+//        String educationText = resumeSectionStringMap.getOrDefault(ResumeSection.EDUCATION,"");
+            
+
+
+
+
+            // Update resume
             resume.setExtractedText(extractedText);
-            resume.setName(dto.getName());
-            resume.setYearsOfExperience(dto.getYearsOfExperience());
-            resume.setAddress(dto.getAddress());
-            resume.setEmail(dto.getEmail());
-            resume.setPhone(dto.getPhone());
-            List<Skill> listOfSkills = dto.getSkills().stream().map(skillName -> {
-                        Skill skill = new Skill();
-                        skill.setName(skillName);
-                        skill.setResume(resume);
-                        return skill;
-                    }).collect(Collectors.toList());
-            resume.setSkills(listOfSkills);
-            resume.setRedFlags(dto.getRedFlags().stream().limit(3).toList());
-            resume.setStatus("COMPLETED");
+            // EDUCATION
+            if (resumeJson.getEducation() != null) {
+                resumeJson.getEducation().stream()
+                        .map(e -> modelMapper.map(e, EducationEntity.class))
+                        .forEach(resume::addEducation);
+            }
 
+            // HEADER
+            if (resumeJson.getHeader() != null) {
+                resume.setName(resumeJson.getHeader().getName());
+                resume.setAddress(resumeJson.getHeader().getCity());
+                resume.setEmail(resumeJson.getHeader().getEmail());
+                resume.setPhone(resumeJson.getHeader().getPhone());
+                resume.setYearsOfExperience(resumeJson.getHeader().getYearsOfExperience());
+            }
+
+            // SKILLS
+            if (resumeJson.getSkills() != null) {
+                List<Skill> listOfSkills = resumeJson.getSkills().stream()
+                        .map(skillName -> {
+                            Skill skill = new Skill();
+                            skill.setName(skillName);
+                            skill.setResume(resume);
+                            return skill;
+                        })
+                        .collect(Collectors.toList());
+                resume.setSkills(listOfSkills);
+            }
+            resume.setRedFlags(resumeJson.getRedFlags());
+//            String resumeHash = DigestUtils.sha256Hex(file.getInputStream());
+//            resume.setResumeHash(resumeHash);
+
+            resume.setStatus(ResumeStatus.UPLOADED);
             resumeRepository.save(resume);
 
-        } catch (Exception e) {
-            resume.setStatus("FAILED");
-            resumeRepository.save(resume);
+        }catch (NullPointerException e){
+            throw new RuntimeException("Null pointerexception occured");
+        }
+        catch (RestClientException e){
+            throw new AiNotRespondingException("AI is not responding");
+        }
+        catch (Exception e) {
+            resume.setStatus(ResumeStatus.FAILED);
+            throw new RuntimeException("Exception occured");
         }
     }
-
-
-
-
-
 
 
 

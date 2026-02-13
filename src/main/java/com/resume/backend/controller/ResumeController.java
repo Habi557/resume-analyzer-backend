@@ -6,6 +6,8 @@ import com.resume.backend.dtos.FileDownloadDataDto;
 import com.resume.backend.dtos.ResumeAnalysisDTO;
 import com.resume.backend.entity.Resume;
 import com.resume.backend.exceptions.JsonProcessingRuntimeException;
+import com.resume.backend.helperclass.ApiResponse;
+import com.resume.backend.helperclass.ProblemFactory;
 import com.resume.backend.projection.ResumeProjection;
 import com.resume.backend.services.ResumeService;
 import lombok.extern.slf4j.Slf4j;
@@ -34,24 +36,21 @@ import java.util.concurrent.TimeoutException;
 public class ResumeController {
     @Autowired
     ResumeService resumeService;
+    @Autowired
+    ProblemFactory problemFactory;
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @PostMapping("/upload")
-    public ResponseEntity<String> uploadResume(@RequestParam(value = "username",required = true) String username, @RequestParam("file")MultipartFile file){
+    public ResponseEntity<ApiResponse> uploadResume(@RequestParam(value = "username",required = true) String username, @RequestParam("file")MultipartFile file) {
         try {
             Resume resume = resumeService.uploadResume(username, file);
-           // return ResponseEntity.ok("Resume uploaded successfully. ID: " + resume.getId());
-            return new ResponseEntity<String>("Resume uploaded successfully. ID: " + resume.getId(),HttpStatus.OK);
-        }
-        catch (NullPointerException e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Something went worng try agian");
-        }
-//        catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-//                    .body("Upload failed: " + e.getMessage());
-//        }
+            return new ResponseEntity<ApiResponse>(problemFactory.customResponse(true, "Resume uploaded successfully. ID: " + resume.getId()), HttpStatus.OK);
+        } catch (NullPointerException e) {
+            return new ResponseEntity<ApiResponse>(problemFactory.customResponse(false, "Resume uploaded failed"), HttpStatus.BAD_REQUEST);
 
+
+        }
     }
-
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/screen-resume")
     public ResponseEntity<List<ResumeAnalysisDTO>> resumeScreen(@RequestBody Map<String, String> requestBody, @RequestParam(value = "scanAllresumesIsChecked", defaultValue = "false") boolean scanAllresumesIsChecked)  {
         List<ResumeAnalysisDTO> screenedResult = null;
@@ -60,6 +59,7 @@ public class ResumeController {
 
        // return ResponseEntity.ok(screenedResult);
     }
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/getAllAnalysiedResumes")
     public  ResponseEntity<List<ResumeAnalysisDTO>> getAllAnalysiedResumes(@RequestParam(required = true,defaultValue = "0") int pageNo, @RequestParam(name="pageSize" ,required = false,defaultValue = "5") int pageSize){
         List<ResumeAnalysisDTO> allAnalysiedResumes = resumeService.getAllAnalysiedResumes(pageNo,pageSize);
@@ -91,8 +91,8 @@ public ResponseEntity<Resource> downloadResume(@PathVariable long resumeId) {
 }
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/allResumes")
-    public ResponseEntity<List<ResumeProjection>> getAllResumes(){
-        List<ResumeProjection> listofResume =resumeService.getAllResumes();
+    public ResponseEntity<List<ResumeProjection>> getAllResumes(@RequestParam(defaultValue = "0") int pageNo, @RequestParam(defaultValue = "10") int pageSize){
+        List<ResumeProjection> listofResume =resumeService.getAllResumes(pageNo,pageSize);
         this.log.debug("Method getAllResumes executed");
 
         return new ResponseEntity<List<ResumeProjection>>(listofResume,HttpStatus.OK);

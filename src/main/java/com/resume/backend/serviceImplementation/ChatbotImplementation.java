@@ -4,11 +4,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.resume.backend.dtos.ChatBotAnalysis;
 import com.resume.backend.dtos.ResumeAnalysisDTO;
 import com.resume.backend.entity.Resume;
+import com.resume.backend.entity.ResumeAnalysisEntity;
 import com.resume.backend.entity.Skill;
 import com.resume.backend.exceptions.AiNotRespondingException;
 import com.resume.backend.exceptions.TemplateNotFoundException;
+import com.resume.backend.helperclass.ConvertingEntityToDtos;
 import com.resume.backend.helperclass.ResumeHelper;
 import com.resume.backend.helperclass.ResumeSpecification;
+import com.resume.backend.repository.ResumeAnalysis;
 import com.resume.backend.repository.ResumeRepository;
 import com.resume.backend.services.ChatbotService;
 import jakarta.persistence.criteria.Join;
@@ -19,46 +22,28 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class ChatbotImplementation implements ChatbotService {
     private ChatClient chatClient;
     private ResumeHelper resumeHelper;
     private ResumeRepository resumeRepository;
+    private ConvertingEntityToDtos convertingEntityToDtos;
 
-    public  ChatbotImplementation(ChatClient chatClient, ResumeHelper resumeHelper, ResumeRepository resumeRepository) {
+    public  ChatbotImplementation(ChatClient chatClient, ResumeHelper resumeHelper, ResumeRepository resumeRepository, ConvertingEntityToDtos convertingEntityToDtos) {
         this.chatClient = chatClient;
         this.resumeHelper=resumeHelper;
         this.resumeRepository=resumeRepository;
+        this.convertingEntityToDtos=convertingEntityToDtos;
     }
-    @Override
-    public List<Resume> chatbotCall(String query) {
-//        try {
-//            String template = resumeHelper.loadPromptTemplate("prompts/chatbotAnalysisTextToJson.txt");
-//            String prompt = resumeHelper.putValuesToPrompt(template, Map.of("query", query));
-//            String content = this.chatClient.prompt(prompt).call().chatResponse().getResult().getOutput().getContent();
-//            String validJson = this.resumeHelper.extractJson(content);
-//            ChatBotAnalysis chatBotAnalysis = new ObjectMapper().readValue(validJson, ChatBotAnalysis.class);
-//            List<Resume> byYearsOfExperience=null;
-//            if(chatBotAnalysis.getYearsOfExperience()!=0.0){
-//                byYearsOfExperience = this.resumeRepository.findByYearsOfExperience(chatBotAnalysis.getYearsOfExperience());
-//            }
-//            return byYearsOfExperience;
-//        } catch (IOException e) {
-//            throw new RuntimeException(e.getMessage());
-//
-//        }
-        return null;
-    }
-    public String getAnswer(String message) {
+
+    public List<ResumeAnalysisDTO> getAnswer(String message) {
         try {
             // Step 1: Load and inject prompt
             String template = resumeHelper.loadPromptTemplate2("prompts/chatbotAnalysisTextToJson.txt");
@@ -74,7 +59,8 @@ public class ChatbotImplementation implements ChatbotService {
             Double experience = chatBotAnalysis.getYearsOfExperience();
             System.out.println("Skills from AI: " + Arrays.toString(skills));
             if ((skills == null || skills.length == 0) && (experience == null || experience == 0.0)) {
-                return "Please mention a skill or experience to filter the resumes.";
+               // return "Please mention a skill or experience to filter the resumes.";
+                throw new RuntimeException("Please mention a skill or experience to filter the resumes.");
             }
             // Step 4: Build Specifications
             Specification<Resume> spec = Specification.where(null);
@@ -101,9 +87,20 @@ public class ChatbotImplementation implements ChatbotService {
 
             // Step 5: Execute search
             List<Resume> results = resumeRepository.findAll(spec);
+            List<ResumeAnalysisDTO> collect = results.stream()
+                    .map(resume -> resume.getResumeAnalysisList().stream()
+                            .max(Comparator.comparing(ResumeAnalysisEntity::getMatchPercentage))
+                            .map(convertingEntityToDtos::convertResumeAnalysisEntityToResumeAnalysisDTO)
+                            .orElse(null)   // safe
+                    )
+                    .filter(Objects::nonNull)   // remove resumes without analysis
+                    .collect(Collectors.toList());
+            return collect;
+
+
 
             // Step 6: Return chatbot response
-            return buildResponse(results, String.join(",", skills != null ? skills : new String[0]), experience);
+           // return buildResponse(results, String.join(",", skills != null ? skills : new String[0]), experience);
 
         } catch (IOException e) {
             throw new RuntimeException("Failed to process chatbot request: " + e.getMessage(), e);

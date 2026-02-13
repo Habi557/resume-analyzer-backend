@@ -1,12 +1,10 @@
 package com.resume.backend.helperclass;
 
+import com.resume.backend.dtos.EducationJson;
 import com.resume.backend.dtos.ResumeAnalysisDTO;
 import com.resume.backend.dtos.ResumeTempDto;
 import com.resume.backend.dtos.SkillDto;
-import com.resume.backend.entity.Resume;
-import com.resume.backend.entity.ResumeAnalysisEntity;
-import com.resume.backend.entity.Skill;
-import com.resume.backend.entity.UserEntity;
+import com.resume.backend.entity.*;
 import org.hibernate.annotations.Comment;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,12 +41,17 @@ public class ConvertingEntityToDtos {
         resumeTempDto.setAddress(resume.getAddress());
         List<SkillDto> skills = resume.getSkills().stream().map(skill -> SkillDto.builder().id(skill.getId()).name(skill.getName()).build()).toList();
         resumeTempDto.setSkills(skills);
-        if(resume.getEducation()!=null){
-            resumeTempDto.setEducation(resume.getEducation().toString());
+        List<EducationEntity> educationList = resume.getEducationList();
+        if(educationList.size()>0){
+            List<EducationJson> educationJsonList = educationList.stream().map(this::convertEducationToEducationJson).toList();
+            resumeTempDto.setEducation(educationJsonList);
         }
         resumeTempDto.setYearsOfExperience(resume.getYearsOfExperience());
         resumeTempDto.setRedFlags(resume.getRedFlags());
         return resumeTempDto;
+    }
+    public  EducationJson convertEducationToEducationJson(EducationEntity education){
+        return  modelMapper.map(education, EducationJson.class);
     }
     public  Resume convertToResumeEntity(ResumeTempDto resumeTempDto){
         Resume resume = new Resume();

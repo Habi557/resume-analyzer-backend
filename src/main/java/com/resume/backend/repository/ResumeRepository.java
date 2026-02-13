@@ -4,6 +4,8 @@ import com.resume.backend.entity.Resume;
 import com.resume.backend.projection.ResumeProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -25,9 +27,9 @@ public interface ResumeRepository extends JpaRepository<Resume,Long>, JpaSpecifi
 //        """, nativeQuery = true)
 //    List<String> getSuggestions(@Param("query") String query);
 @Query(value = """
-    SELECT canditate_name AS suggestion
+    SELECT name AS suggestion
     FROM resume
-    WHERE LOWER(canditate_name) LIKE CONCAT('%', :query, '%')
+    WHERE LOWER(name) LIKE CONCAT('%', :query, '%')
 
     UNION
 
@@ -59,5 +61,9 @@ List<String> getSuggestions(@Param("query") String query);
     //  SELECT DISTINCT skill FROM resume WHERE LOWER(skill) LIKE %:query%
     //        UNION
     @Query("SELECT r.id as id, r.originalFileName as originalFileName , r.name as name FROM Resume r")
-    List<ResumeProjection> findAllResumes();
+    Page<ResumeProjection> findAllResumes(Pageable pageable);
+    //To resolve N+1 problem in chatbobt
+    @EntityGraph(attributePaths = {"resumeAnalysisList"})
+    List<Resume> findAll(Specification<Resume> spec);
+
 }

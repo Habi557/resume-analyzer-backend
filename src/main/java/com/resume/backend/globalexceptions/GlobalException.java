@@ -2,6 +2,9 @@ package com.resume.backend.globalexceptions;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.resume.backend.exceptions.*;
+import com.resume.backend.helperclass.ApiResponse;
+import com.resume.backend.helperclass.ProblemFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -12,6 +15,8 @@ import java.time.Instant;
 
 @ControllerAdvice
 public class GlobalException {
+    @Autowired
+    private ProblemFactory problemFactory;
     @ExceptionHandler({JsonProcessingRuntimeException.class})
     public ProblemDetail handleJsonFormatException(String message, JsonProcessingException e){
         ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatusCode.valueOf(400));
@@ -61,10 +66,10 @@ public class GlobalException {
                 .body(problemDetail);
     }
     @ExceptionHandler(AiNotRespondingException.class)
-    public ResponseEntity<String> handleAiNotResponding(AiNotRespondingException ex) {
-        return ResponseEntity
-                .status(HttpStatus.SERVICE_UNAVAILABLE)
-                .body(ex.getMessage());
+    public ResponseEntity<ApiResponse> handleAiNotResponding(AiNotRespondingException ex) {
+        return ResponseEntity.badRequest()
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .body(problemFactory.customResponse(false,ex.getMessage()));
     }
     @ExceptionHandler(FileNotFoundEx.class)
     public ResponseEntity<String> handleFileNotFoundEx(FileNotFoundEx ex) {

@@ -34,6 +34,7 @@ public class UserDetailsServiceImpl implements UserDetailsService{
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 		// TODO Auto-generated method stub
 		UserEntity userEntity = userRepository.findByUserNameCaseSensitive(username);
+        String password;
          if(userEntity == null) {
         	 throw new UsernameNotFoundException(username);
          }
@@ -46,17 +47,21 @@ public class UserDetailsServiceImpl implements UserDetailsService{
 //        	 GrantedAuthority authority= new SimpleGrantedAuthority(role.trim());
 //        	 authorities.add(authority);
 //         }
-		System.out.println("Password encoder");
-		System.out.println(passwordEncoder.encode("habi786"));
+	//	System.out.println("Password encoder");
+	//	System.out.println(passwordEncoder.encode("admin123"));
 		//System.out.println("Base64");
 
 	//	System.out.println(Base64.getEncoder().encodeToString(Keys.secretKeyFor(SignatureAlgorithm.HS256).getEncoded()));
 
-
+        if(userEntity.getPassword()==null || userEntity.getPassword().isEmpty()){
+            password = "{noop}OAUTH2_USER";
+        }else{
+            password = userEntity.getPassword();
+        }
 		List<SimpleGrantedAuthority> authorities = userEntity.getRoles().stream()
 				.map(role -> new SimpleGrantedAuthority(role.getRoleName())) // ROLE_ADMIN
 				.toList();
-		UserDetails user = new User(userEntity.getUsername(),userEntity.getPassword(),authorities);
+		UserDetails user = new User(userEntity.getUsername(),password,authorities);
 		return user;
 	}
 
