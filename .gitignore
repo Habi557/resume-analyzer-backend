@@ -40,5 +40,5 @@ target/
 .env.docker
 README.Docker.md
 image.tar
-image.tar
+img.tar
 src/main/resources/credentials.json
