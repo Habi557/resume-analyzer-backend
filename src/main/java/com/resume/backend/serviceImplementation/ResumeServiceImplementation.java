@@ -193,43 +193,6 @@ public class ResumeServiceImplementation implements ResumeService {
 
 
 
- //@Transactional
-//public List<ResumeAnalysisDTO> resumeScreenAI2(List<Resume> resumes, String jobRole) {
-//
-//    // 🔥 Trigger ALL AI calls concurrently
-//    List<CompletableFuture<ResumeAnalysisDTO>> futures = resumes.stream()
-//            .map(resume -> analyzeSingleResumeAsync(resume, jobRole))
-//            .collect(Collectors.toList());
-//
-//    // 🔥 Wait for all to finish (non-blocking internally)
-//    List<ResumeAnalysisDTO> result = futures.stream()
-//            .map(CompletableFuture::join)
-//            .sorted(Comparator.comparing(ResumeAnalysisDTO::getMatchPercentage).reversed())
-//            .collect(Collectors.toList());
-//
-//    // Update resume scanned flag
-//    resumeRepository.saveAll(resumes);
-//    //     convert the list of ResumeAnalysisDTO to ResumeAnalysisEntity
-//    List<ResumeAnalysisEntity> resumeAnalysisEntityList = result.stream()
-//            .map((dto) ->{
-//                try {
-//                    ResumeAnalysisEntity entity = modelMapper.map(dto, ResumeAnalysisEntity.class);
-//                    entity.setId(null);
-//                    entity.setAnalysizedTime(LocalDateTime.now());
-//                    return  entity;
-//                }catch (JsonProcessingRuntimeException e){
-//                    throw new JsonProcessingRuntimeException("Invalid json format");
-//                }
-//                // resumeAnalysis.save(entity);
-//
-//
-//            } )
-//            .collect(Collectors.toList());
-//     // save the resume analysis entity
-//    resumeAnalysis.saveAll(resumeAnalysisEntityList);
-//
-//    return result;
-//}
  @Transactional
  public List<ResumeAnalysisDTO> resumeScreenAI(List<Resume> resumes, String jobRole) {
      // STEP 1: Convert Hibernate Entities → Safe DTOs (NO lazy loading later)
@@ -334,60 +297,6 @@ public class ResumeServiceImplementation implements ResumeService {
         return resumesWithSkills;
     }
 
-    /**
-     * call the ai service  asynchronously for increasing the performance
-     *
-     */
-
-    //@Async
-    //public CompletableFuture<ResumeAnalysisDTO> analyzeSingleResumeAsync(Resume resume, String jobRole) {
-//        try {
-//
-//            String skills = resume.getSkills()
-//                    .stream()
-//                    .map(Skill::getName)
-//                    .collect(Collectors.joining(", "));
-//
-//            String tempResumeText = """
-//                Name: %s
-//                Skills: %s
-//                Experience: %s years
-//                Address: %s
-//                """.formatted(
-//                    resume.getName(),
-//                    skills,
-//                    resume.getYearsOfExperience(),
-//                    resume.getAddress()
-//            );
-//
-//            String template = resumeHelper.loadPromptTemplate("prompts/resumeScreeningMatcher.txt");
-//            String prompt = resumeHelper.putValuesToPrompt(
-//                    template,
-//                    Map.of("resumeText", tempResumeText, "jobRole", jobRole)
-//            );
-//
-//            //  AI call (1 per resume)
-//            String aiResponse = aiApis.callAiService(prompt);
-//
-//            String validJson = resumeHelper.extractJson(aiResponse);
-//            System.out.println("validJson ++++++++++++++++++++++++++++++");
-//            System.out.println(validJson);
-//
-//            ResumeAnalysisDTO dto = new ObjectMapper().readValue(validJson, ResumeAnalysisDTO.class);
-//            dto.setResume(convertingEntityToDtos.convertResumeDto(resume));
-//            System.out.println("dto ++++++++++++++++++++++++++++++");
-//            System.out.println(dto);
-//
-//
-//            resume.setScanAllresumesIsChecked(true);
-//
-//            return CompletableFuture.completedFuture(dto);
-//
-//
-//        } catch (Exception e) {
-//            throw new RuntimeException("AI processing failed", e);
-//        }
-//    }
     public ResumeAnalysisDTO analyzeSingleResumeAsync(ResumeTempDto resume, String jobRole) {
         try {
 
@@ -414,7 +323,7 @@ public class ResumeServiceImplementation implements ResumeService {
                     Map.of("resumeText", tempResumeText, "jobRole", jobRole)
             );
 
-            // 🔥 AI call (1 per resume)
+            //  AI call (1 per resume)
             String aiResponse = aiApis.callAiService(prompt);
 
             String validJson = resumeHelper.extractJson(aiResponse);
@@ -422,16 +331,9 @@ public class ResumeServiceImplementation implements ResumeService {
             System.out.println(validJson);
 
             ResumeAnalysisDTO dto = new ObjectMapper().readValue(validJson, ResumeAnalysisDTO.class);
-           // dto.setResume(convertingEntityToDtos.convertResumeDto(resume));
             dto.setResume(resume);
             System.out.println("dto ++++++++++++++++++++++++++++++");
             System.out.println(dto);
-
-
-
-           // resume.setScanAllresumesIsChecked(true);
-
-            //return CompletableFuture.completedFuture(dto);
             return dto;
 
         } catch (Exception e) {
@@ -478,19 +380,6 @@ public class ResumeServiceImplementation implements ResumeService {
 
 
             }
-//            String header = resumeHelper.extractHeaderFromResume(extractedText);
-//            String name = resumeHelper.extractNameFromHeader(header);
-//            String email=resumeHelper.extractEamilFromHeader(header);
-//            String phone =resumeHelper.extractPhoneFromHeader(header);
-//
-//            String experiencText = resumeSectionStringMap.getOrDefault(ResumeSection.EXPERIENCE,"");
-//        String skillsText = resumeSectionStringMap.getOrDefault(ResumeSection.SKILLS,"");
-//        String educationText = resumeSectionStringMap.getOrDefault(ResumeSection.EDUCATION,"");
-            
-
-
-
-
             // Update resume
             resume.setExtractedText(extractedText);
             // EDUCATION
