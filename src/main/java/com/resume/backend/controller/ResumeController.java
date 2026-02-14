@@ -70,11 +70,6 @@ public class ResumeController {
        // return  ResponseEntity.ok(resumeService.getAllDashboardDetails());
         return  new ResponseEntity<DashboardDto>(resumeService.getAllDashboardDetails(),HttpStatus.OK);
     }
-//    @GetMapping("/downloadResume/{resumeId}")
-//    public  ResponseEntity<Resource> dowloadResume(@PathVariable long resumeId){
-//       Resource resource= resumeService.dowloadResume(resumeId);
-//       return new ResponseEntity<Resource>(resource,HttpStatus.OK);
-//    }
 @GetMapping("/downloadResume/{resumeId}")
 public ResponseEntity<Resource> downloadResume(@PathVariable long resumeId) {
 

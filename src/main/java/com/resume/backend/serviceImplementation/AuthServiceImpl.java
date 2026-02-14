@@ -140,20 +140,7 @@ public class AuthServiceImpl  implements AuthService {
         Role role = roleRepository.findByRoleName("ROLE_USER").orElseThrow();
         userEntity.setRoles(Set.of(role));
         applicationEventPublisher.publishEvent(userEntity);
-
-
         return userRepository.save(userEntity);
-//        if(userRepository.existsByUsername(userDto.getUsername())){
-//            throw new UserAlreadyExistsException("User already exists");
-//        }
-//        UserEntity userEntity = modelMapper.map(userDto, UserEntity.class);
-//        userEntity.setPassword(passwordEncoder.encode(userDto.getPassword()));
-//        Role role = roleRepository.findByRoleName("ROLE_USER")
-//                .orElseThrow(() ->  new NoRoleFoundExcepiton("ROLE_USER not found"));
-//
-//        userEntity.setRoles(Set.of(role));
-//
-//        userRepository.save(userEntity);
     }
     public AuthResponse buildAuthResponseFromRefreshToken(HttpServletRequest request) {
 
