@@ -1,0 +1,83 @@
+version: '3.9'
+
+services:
+  angular-frontend:
+    image: airesumeimagefrontend
+    container_name: angular-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - resume-ai-backend
+    networks:
+      - app-network2
+    restart: unless-stopped
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: resume_ai
+      MYSQL_USERNAME: ${MYSQL_USERNAME}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data2:/var/lib/mysql
+    networks:
+      - app-network2
+
+  ai-model-ollama:
+    image: ollama/ollama:latest
+    container_name: ai-model-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+#    entrypoint: >
+#      /bin/sh -c "
+#        ollama serve &
+#        sleep 6 &&
+#        ollama pull qwen2.5:3b &&
+#        wait
+#      "
+    entrypoint: >
+      /bin/sh -c "
+        ollama serve &
+        sleep 4 &&
+        if ! ollama list | grep -q 'qwen2.5:3b'; then
+          ollama pull qwen2.5:3b ;
+        fi &&
+        sleep 2 &&
+        ollama run qwen2.5:3b &
+        wait
+      "
+    networks:
+      - app-network2
+    restart: unless-stopped
+
+  resume-ai-backend:
+    image: airesumeimage
+    container_name: resume-ai-backend
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./uploads:/app/uploads
+    env_file:
+      - .env.docker
+    depends_on:
+      - mysql
+      - ai-model-ollama
+#    environment:
+#      OLLAMA_BASE_URL: http://ai-model-ollama:11434
+#      SPRING_DATASOURCE_HIKARI_INITIALIZATIONFAILTIMEOUT: 60000
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_HIKARI_INITIALIZATIONFAILTIMEOUT: 60000
+    networks:
+      - app-network2
+    restart: unless-stopped
+
+volumes:
+  mysql_data2:
+  ollama-data:
+
+networks:
+  app-network2:
