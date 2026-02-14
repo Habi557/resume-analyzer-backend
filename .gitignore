@@ -33,3 +33,12 @@ build/
 .vscode/
 target/
 .idea/
+
+.azure
+.dockerignore
+.elasticbeanstalk
+.env.docker
+README.Docker.md
+image.tar
+image.tar
+src/main/resources/credentials.json
