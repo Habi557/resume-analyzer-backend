@@ -50,68 +50,6 @@ public class EmailServiceImplementation implements EmailService {
         this.emailSender=emailSender;
     }
 
-//    public boolean sendEmail(Long id, String templateName, String interviewDate, String interviewTime, String interviewMode ) {
-//        // String to, String subject, String templateName, Map<String, Object> model
-//        ResumeAnalysisEntity resumeAnlysisEntity = this.resumeAnalysisRepo.findById(id).get();
-//        System.out.println("Template name: " + templateName);
-//
-//        Resume resume = resumeAnlysisEntity.getResume();
-//        String emailTo = resume.getEmail();
-//        MimeMessagePreparator message = null;
-//        Map<String, Object> model = new HashMap<>();
-//        model.put("name", resume.getName());
-//        model.put("interviewDate",interviewDate);
-//        model.put("interviewTime",interviewTime);
-//        model.put("interviewMode",interviewMode);
-//        resumeAnlysisEntity.setInterviewDate(interviewDate);
-//        resumeAnlysisEntity.setInterviewTime(interviewTime);
-//        resumeAnlysisEntity.setInterviewMode(interviewMode);
-//        resumeAnlysisEntity.setSelectedStatus(templateName);
-//        String subject = switch (templateName) {
-//            case "interview_scheduled" -> "Interview Scheduled";
-//            case "selected" -> "Congratulations! You’ve Been Selected";
-//            default -> "Update on Your Application";
-//        };
-//        if(emailTo != null && !emailTo.isEmpty() && resumeHelper.isValidGmail(emailTo)){
-//            Context context = new Context();
-//            context.setVariables(model);
-//            templateName = templateName.trim();
-//            try {
-//                String meetingLink = jitsiMeetingService.generateMeetingLink("venkat", resume.getName());
-//                context.setVariable("confirmationLink", meetingLink);
-//                if(templateName.equals("Scheduled for Interview")){
-//                    templateName = "interview_scheduled";
-//                }else if(templateName.equals("Rejected")){
-//                    templateName="rejected";
-//                }else if(templateName.equals("Selected")){
-//                    templateName = "selected";
-//                }
-//                String htmlContent = templateEngine.process(templateName, context);
-//                message = mimeMessage -> {
-//                    mimeMessage.setRecipient(Message.RecipientType.TO, new InternetAddress(emailTo));
-//                    mimeMessage.setFrom(new InternetAddress("habibullashaik9944@gmail.com"));
-//                    mimeMessage.setSubject(subject);
-//                    mimeMessage.setContent(htmlContent, "text/html");
-//                };
-//                mailSender.send(message);
-//            this.resumeAnalysisRepo.save(resumeAnlysisEntity);
-//            return true;
-//            }catch (TemplateInputException e){
-//                throw  new TemplateInputException(" Email Template not found");
-//            }
-//            catch (MailException e){
-//                throw new RuntimeException("Ioexception occured");
-//            }
-////            catch (GeneralSecurityException e){
-////                throw new RuntimeException("GeneralSecurityException occured");
-////            }
-//
-//        }else{
-//            throw  new InvalidEmailException("Invalid Email");
-//        }
-//
-//
-//    }
 @EventListener
 public void sendRegistrationEmail(UserEntity userEntity){
         HashMap<String,Object> map = new HashMap();

@@ -17,16 +17,7 @@ import java.util.List;
 @Repository
 public interface ResumeRepository extends JpaRepository<Resume,Long>, JpaSpecificationExecutor<Resume> {
     List<Resume> findByYearsOfExperience(double years);
-//    @Query(value = """
-//        SELECT  canditate_name FROM resume WHERE LOWER(canditate_name) LIKE %:query%
-//        UNION
-//        SELECT  email FROM resume WHERE LOWER(email) LIKE %:query%
-//        UNION
-//        SELECT  phone FROM resume WHERE LOWER(phone) LIKE %:query%
-//        LIMIT 10
-//        """, nativeQuery = true)
-//    List<String> getSuggestions(@Param("query") String query);
-@Query(value = """
+    @Query(value = """
     SELECT name AS suggestion
     FROM resume
     WHERE LOWER(name) LIKE CONCAT('%', :query, '%')
@@ -45,21 +36,11 @@ public interface ResumeRepository extends JpaRepository<Resume,Long>, JpaSpecifi
 
     LIMIT 10
     """, nativeQuery = true)
-List<String> getSuggestions(@Param("query") String query);
-
-
-
+    List<String> getSuggestions(@Param("query") String query);
     @Query("SELECT DISTINCT r.id FROM Resume r JOIN r.skills s WHERE LOWER(s.name) LIKE LOWER(CONCAT('%', :skillName, '%'))")
     Page<Long> findResumeIdsBySkill(@Param("skillName") String skillName, Pageable pageable);
     @Query("SELECT DISTINCT r FROM Resume r JOIN FETCH r.skills s WHERE r.id IN :ids")
     List<Resume> findResumesWithSkills(@Param("ids") List<Long> ids);
-
-
-//    @Query("SELECT DISTINCT r FROM Resume r JOIN FETCH r.skills s WHERE LOWER(s.name) LIKE %:skillName%")
-//    Page<Resume> findResumesBySkillName(@Param("skillName") String skillName, Pageable pageable);
-
-    //  SELECT DISTINCT skill FROM resume WHERE LOWER(skill) LIKE %:query%
-    //        UNION
     @Query("SELECT r.id as id, r.originalFileName as originalFileName , r.name as name FROM Resume r")
     Page<ResumeProjection> findAllResumes(Pageable pageable);
     //To resolve N+1 problem in chatbobt
