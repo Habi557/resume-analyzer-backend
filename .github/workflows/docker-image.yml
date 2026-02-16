@@ -15,25 +15,34 @@ jobs:
     - name: Build and test
       run: mvn clean test -DskipTests
     - name: Build Docker Image
-      run: docker build -t habibulla/airesumeimage .
+      run: |
+        docker build -t habibulla/airesumeimage:${{ github.sha }} .
+        docker tag habibulla/airesumeimage:${{ github.sha }} habibulla/airesumeimage:latest
     - name: Login into Docker
       run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
     - name: Push Image
-      run: docker push habibulla/airesumeimage
+      run: |
+        docker push habibulla/airesumeimage:${{ github.sha }}
+        docker push habibulla/airesumeimage:latest
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
     - name: Setup SSH for EC2
       uses: omarhosny206/setup-ssh-for-ec2@v1.0.0
       with:
         EC2_SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
         EC2_URL: ${{ secrets.EC2_URL }}
     # then you can run commands/scripts directly on the EC2 instance e.g.:
-    - name: Create a new file on the EC2 instance with "hello-world"
+    - name: Deploy on EC2
       run: |
-        ssh ec2-user@${{ secrets.EC2_HOST }} "
-          docker pull habibulla/airesumeimage &&
+        ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_URL }} "
+          docker pull habibulla/airesumeimage:${{ github.sha }} &&
           docker stop airesumeimage || true &&
           docker rm airesumeimage || true &&
-          docker run -d -p 8080:8080 --name airesumeimage habibulla/airesumeimage
+          docker run -d -p 8080:8080 --name airesumeimage habibulla/airesumeimage:${{ github.sha }}
         "
+
 #      run: ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_URL }} "echo "hello-world" >> new_file.txt"
 #    - name: Build the Docker image
 #      run: docker build . --file Dockerfile --tag airesumeimage:$(date +%s)
