@@ -4,11 +4,8 @@ on:
   push:
     branches: [ "main" ]
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v6
     - uses: actions/setup-java@v5
@@ -17,10 +14,12 @@ jobs:
        java-version: '21'
     - name: Build and test
       run: mvn clean test -DskipTests
-      env:
-        EC2_SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-        EC2_URL: ${{ secrets.EC2_URL }}
-        EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
+    - name: Build Docker Image
+      run: docker build -t habibulla/airesumeimage .
+    - name: Login into Docker
+      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+    - name: Push Image
+      run: docker push habibulla/airesumeimage
     - name: Setup SSH for EC2
       uses: omarhosny206/setup-ssh-for-ec2@v1.0.0
       with:
@@ -28,6 +27,7 @@ jobs:
         EC2_URL: ${{ secrets.EC2_URL }}
     # then you can run commands/scripts directly on the EC2 instance e.g.:
     - name: Create a new file on the EC2 instance with "hello-world"
-      run: ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_URL }} "echo "hello-world" >> new_file.txt"
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag airesumeimage:$(date +%s)
+      run: echo "hello world"
+#      run: ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_URL }} "echo "hello-world" >> new_file.txt"
+#    - name: Build the Docker image
+#      run: docker build . --file Dockerfile --tag airesumeimage:$(date +%s)
