@@ -37,12 +37,10 @@ jobs:
     - name: Deploy on EC2
       run: |
         ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_URL }} "
-          docker pull habibulla/airesumeimage:${{ github.sha }} &&
+          docker pull habibulla/airesumeimage:latest &&
           docker stop airesumeimage || true &&
           docker rm airesumeimage || true &&
           docker run -d -p 8080:8080 --name airesumeimage habibulla/airesumeimage:${{ github.sha }}
         "
 
-#      run: ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_URL }} "echo "hello-world" >> new_file.txt"
-#    - name: Build the Docker image
-#      run: docker build . --file Dockerfile --tag airesumeimage:$(date +%s)
+
