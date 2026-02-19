@@ -37,10 +37,14 @@ jobs:
     - name: Deploy on EC2
       run: |
         ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_URL }} "
-          docker pull habibulla/airesumeimage:latest &&
-          docker stop airesumeimage || true &&
-          docker rm airesumeimage || true &&
-          docker run -d -p 8080:8080 --name airesumeimage habibulla/airesumeimage:latest
+#          docker pull habibulla/airesumeimage:latest &&
+#          docker stop airesumeimage || true &&
+#          docker rm airesumeimage || true &&
+#          docker run -d -p 8080:8080 --name airesumeimage habibulla/airesumeimage:latest
+             cd /opt &&
+             docker compose pull &&
+             docker compose up -d &&
+             docker image prune -af  
         "
 
 
