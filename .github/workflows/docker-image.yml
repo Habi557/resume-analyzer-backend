@@ -33,14 +33,9 @@ jobs:
       with:
         EC2_SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
         EC2_URL: ${{ secrets.EC2_URL }}
-    # then you can run commands/scripts directly on the EC2 instance e.g.:
     - name: Deploy on EC2
       run: |
         ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_URL }} "
-#          docker pull habibulla/airesumeimage:latest &&
-#          docker stop airesumeimage || true &&
-#          docker rm airesumeimage || true &&
-#          docker run -d -p 8080:8080 --name airesumeimage habibulla/airesumeimage:latest
              cd /opt &&
              docker compose pull &&
              docker compose up -d &&
