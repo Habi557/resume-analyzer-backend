@@ -37,7 +37,7 @@ target/
 .azure
 .dockerignore
 .elasticbeanstalk
-.env.docker
+.env
 README.Docker.md
 image.tar
 img.tar
