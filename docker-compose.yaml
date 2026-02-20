@@ -15,7 +15,6 @@ services:
     image: mysql:8.0
     environment:
       MYSQL_DATABASE: resume_ai
-      MYSQL_USERNAME: ${MYSQL_USERNAME}
       MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
     ports:
       - "3307:3306"
@@ -31,13 +30,6 @@ services:
       - "11434:11434"
     volumes:
       - ollama-data:/root/.ollama
-#    entrypoint: >
-#      /bin/sh -c "
-#        ollama serve &
-#        sleep 6 &&
-#        ollama pull qwen2.5:3b &&
-#        wait
-#      "
     entrypoint: >
       /bin/sh -c "
         ollama serve &
@@ -61,16 +53,10 @@ services:
     volumes:
       - ./uploads:/app/uploads
     env_file:
-      - .env.docker
+      - .env
     depends_on:
       - mysql
       - ai-model-ollama
-#    environment:
-#      OLLAMA_BASE_URL: http://ai-model-ollama:11434
-#      SPRING_DATASOURCE_HIKARI_INITIALIZATIONFAILTIMEOUT: 60000
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      SPRING_DATASOURCE_HIKARI_INITIALIZATIONFAILTIMEOUT: 60000
     networks:
       - app-network2
     restart: unless-stopped
