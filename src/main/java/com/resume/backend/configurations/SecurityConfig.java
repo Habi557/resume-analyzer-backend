@@ -57,6 +57,8 @@ public class SecurityConfig {
                                 .failureHandler(authenticationFailureHandler)
                         )
                 .formLogin(AbstractHttpConfigurer::disable)
+
+
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .exceptionHandling(exception -> exception.accessDeniedHandler(new CustomAccessDeniedHandler()).authenticationEntryPoint(new JwtAuthenticationEntryPoint()))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
@@ -67,7 +69,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:4200","http://localhost","http://myprojectforangular.s3-website.ap-south-1.amazonaws.com"));
+        config.setAllowedOrigins(List.of("http://localhost:4200","http://localhost","http://myprojectforangular.s3-website.ap-south-1.amazonaws.com","http://13.204.215.154:4200"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH","OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
