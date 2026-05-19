@@ -38,6 +38,7 @@ public class ResumeAnalysisDTO {
     private  String interviewMode;
     @JsonProperty("selectedStatus")
     private String selectedStatus;
+    private long totalPages;
 
     public ResumeAnalysisDTO(Long id, int matchPercentage, List<String> suggestions,
                              String conclusion, LocalDateTime analysizedTime,

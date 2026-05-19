@@ -24,7 +24,11 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         String message;
         if (request.getAttribute("JWT_EXPIRED") != null) {
             message = "Token expired. Please login again.";
-        } else {
+        }
+        else if(!authException.getMessage().isEmpty()){
+            message=authException.getMessage();
+        }
+        else {
             message = "Please login to access this resource.";
         }
 

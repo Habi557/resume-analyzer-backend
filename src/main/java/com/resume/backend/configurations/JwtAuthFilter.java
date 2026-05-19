@@ -48,6 +48,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 || path.contains("/oauth2")
                 || path.contains("/login/oauth2")
                 || path.contains("/oauth-success")
+                || path.contains("/actuator")
                 ;
     }
 
@@ -88,7 +89,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                 t -> System.out.println("DB TOKEN FOUND"),
                                 () -> System.out.println("DB TOKEN NOT FOUND")
                         );
-				if (jwtService.validateToken(token, userDetails)) {
+				if (jwtService.validateToken(token, userDetails) && isStoredValid) {
 					UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails,
 							null, userDetails.getAuthorities());
 					authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

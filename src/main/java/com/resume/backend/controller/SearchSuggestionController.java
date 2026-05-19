@@ -8,7 +8,9 @@ import com.resume.backend.entity.ResumeAnalysisEntity;
 import com.resume.backend.entity.Skill;
 import com.resume.backend.helperclass.ConvertingEntityToDtos;
 import com.resume.backend.repository.SkillRepository;
+import com.resume.backend.services.ResumeSearchService;
 import com.resume.backend.services.ResumeService;
+import com.resume.backend.services.Suggestions;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -25,20 +27,22 @@ import java.util.stream.Stream;
 @RequestMapping("/search")
 public class SearchSuggestionController {
     private  ConvertingEntityToDtos convertingEntityToDtos;
-    private ResumeService resumeService;
+    private ResumeSearchService resumeSearchService;
     private SkillRepository skillRepository;
+    private Suggestions suggestionsimpl;
 
-    SearchSuggestionController(ResumeService resumeService, SkillRepository skillRepository,ConvertingEntityToDtos convertingEntityToDtos) {
-        this.resumeService = resumeService;
+    SearchSuggestionController(ResumeSearchService resumeSearchService, SkillRepository skillRepository,ConvertingEntityToDtos convertingEntityToDtos,Suggestions suggestions) {
+        this.resumeSearchService = resumeSearchService;
         this.skillRepository = skillRepository;
         this.convertingEntityToDtos=convertingEntityToDtos;
+        this.suggestionsimpl=suggestions;
     }
 
     @GetMapping(value = "/suggestions" ,produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<String>> getSuggestions(@RequestParam("query") String query) {
         {
             System.out.println("query "+query);
-            List<String> suggestions = resumeService.getSuggestions(query);
+            List<String> suggestions = suggestionsimpl.getSuggestions(query);
             List<String> skillSuggestions = this.skillRepository.findSkillSuggestions(query);
             List<String> combined = Stream.concat(suggestions.stream(), skillSuggestions.stream())
 //                    .distinct()
@@ -50,19 +54,9 @@ public class SearchSuggestionController {
     }
 
     @GetMapping("/analysedresumes")
-    public ResponseEntity<List<ResumeAnalysisDTO>> findResumesBySkillName(@RequestParam("") String skillName,@RequestParam int currentPage, @RequestParam int pageSize ) {
-        List<ResumeAnalysisDTO> collect = resumeService.findResumesBySkillName(skillName, currentPage, pageSize)
-                .stream()
-                .map(Resume::getResumeAnalysisList)
-                .flatMap(List::stream)
-                .map(ra -> {
-                   // ResumeAnalysisDTO resumeAnalysisDTO = new ObjectMapper().convertValue(ra, ResumeAnalysisDTO.class);
-                   Resume resume= ra.getResume();
-                   ResumeTempDto resumeTempDto= convertingEntityToDtos.convertResumeDto(resume);
-                    ResumeAnalysisDTO analysisDTO = new ResumeAnalysisDTO(ra.getId(), ra.getMatchPercentage(), ra.getSuggestions(), ra.getConclusion(), ra.getAnalysizedTime(), ra.getTopMatchingSkills(), resumeTempDto, ra.getInterviewDate(), ra.getInterviewTime(), ra.getInterviewMode(), ra.getSelectedStatus());
-                    return analysisDTO;
-                })
-                .collect(Collectors.toList());
+    public ResponseEntity<List<ResumeAnalysisDTO>> findResumesBySkillName(@RequestParam("") String skillName,@RequestParam(defaultValue = "0") int currentPage, @RequestParam(defaultValue = "2") int pageSize ) {
+        List<ResumeAnalysisDTO> collect = resumeSearchService.findResumesBySkillName(skillName, currentPage, pageSize);
+
         return new ResponseEntity<List<ResumeAnalysisDTO>>(collect,HttpStatus.OK);
        // return null;
 

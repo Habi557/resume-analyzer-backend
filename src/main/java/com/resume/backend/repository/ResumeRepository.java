@@ -1,8 +1,10 @@
 package com.resume.backend.repository;
 
 import com.resume.backend.entity.Resume;
+import com.resume.backend.projection.DashboardProjection;
 import com.resume.backend.projection.ResumeProjection;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -41,10 +43,16 @@ public interface ResumeRepository extends JpaRepository<Resume,Long>, JpaSpecifi
     Page<Long> findResumeIdsBySkill(@Param("skillName") String skillName, Pageable pageable);
     @Query("SELECT DISTINCT r FROM Resume r JOIN FETCH r.skills s WHERE r.id IN :ids")
     List<Resume> findResumesWithSkills(@Param("ids") List<Long> ids);
+
+
     @Query("SELECT r.id as id, r.originalFileName as originalFileName , r.name as name FROM Resume r")
     Page<ResumeProjection> findAllResumes(Pageable pageable);
     //To resolve N+1 problem in chatbobt
     @EntityGraph(attributePaths = {"resumeAnalysisList"})
     List<Resume> findAll(Specification<Resume> spec);
+    // Dashboard details like totalresume, best Match .. etc
+    @Query(value = "CALL get_dashboard_details()", nativeQuery = true)
+    DashboardProjection getDashboardDetails();
+    Page<Resume> findByScanAllresumesIsCheckedFalse(PageRequest pageRequest);
 
 }

@@ -14,20 +14,8 @@ import java.util.List;
 import java.util.Map;
 
 public interface ResumeService {
-    String generateResumeResponse(String userResumeDeatils);
-     Resume uploadResume(String username, MultipartFile file) ;
-
-    List<ResumeAnalysisDTO> resumeScreen(String text, boolean scanAllresumesIsChecked) ;
-
-    List<ResumeAnalysisDTO> getAllAnalysiedResumes(int pageNo, int pageSize);
-
-    DashboardDto getAllDashboardDetails();
-
+    Resume uploadResume(String username, MultipartFile file) ;
     FileDownloadDataDto dowloadResume(long resumeId);
 
-    List<ResumeProjection> getAllResumes(int pageNo,int pagesize);
 
-    List<String> getSuggestions(String query);
-
-    List<Resume> findResumesBySkillName(String lowerCase, int currentPage, int pageSize);
 }

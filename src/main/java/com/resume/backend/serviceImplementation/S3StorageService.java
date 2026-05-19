@@ -42,6 +42,8 @@ public class S3StorageService implements StorageService {
     public String saveFile(MultipartFile file, String username) throws IOException {
         String uniqueFileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
         String s3Key = "resumes/" + username + "/" + uniqueFileName;
+        CreateBucketRequest.Builder builder = CreateBucketRequest.builder();
+        builder.bucket(bucketName).build();
 
         s3Client.putObject(
                 PutObjectRequest.builder()

@@ -325,7 +325,7 @@ public String extractTextFromDocx(File savedFile) throws IOException {
 
         List<String> knownCities = List.of(
                 "hyderabad", "bangalore", "chennai", "pune",
-                "mumbai", "delhi", "kolkata", "ahmedabad"
+                "mumbai", "delhi", "kolkata", "ahmedabad","telangana"
         );
 
         for (String line : headerText.split("\n")) {
@@ -588,7 +588,15 @@ public String extractTextFromDocx(File savedFile) throws IOException {
                     .append(jsonTemplateForField(f))
                     .append(",\n");
         });
-        sb.append("}\n\nResume:\n");
+        sb.append("}\n\n");
+        if(missingFields.contains(Field.ADDRESS)){
+            sb.append("""
+            - Address format: "City, State, Country"
+            - Extract city, state, country from resume
+            - If only state is present, infer major city (e.g., Telangana → Hyderabad)
+            - Normalize country codes (IN → India)""");
+        }
+        sb.append("\n\nResume:\n");
         sb.append(resumeText);
 
         return sb.toString();
