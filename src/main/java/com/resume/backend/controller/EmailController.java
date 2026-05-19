@@ -17,7 +17,7 @@ public class EmailController {
         System.out.println("interviewTime "+ interviewTime);
         System.out.println("interviewMode "+ interviewMode);
 
-        boolean emailStatus = emailService.sendEmail(id, templateName, interviewDate, interviewTime, interviewMode );
+        boolean emailStatus = emailService.sendInterviewStatusEmail(id, templateName, interviewDate, interviewTime, interviewMode );
         if (emailStatus){
             return new ResponseEntity<String>("Email sent Successfully", HttpStatus.OK);
 

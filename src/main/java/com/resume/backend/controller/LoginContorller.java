@@ -29,7 +29,7 @@ public class LoginContorller {
         AuthResponse authResponse = authService.login(loginRequest);
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", authResponse.getRefreshToken())
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .path("/")
                 .sameSite("Lax")
                 .maxAge(7 * 24 * 60 * 60)

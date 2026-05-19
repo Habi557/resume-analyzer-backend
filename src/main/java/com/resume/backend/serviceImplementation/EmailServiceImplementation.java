@@ -3,6 +3,7 @@ package com.resume.backend.serviceImplementation;
 import com.resume.backend.entity.Resume;
 import com.resume.backend.entity.ResumeAnalysisEntity;
 import com.resume.backend.entity.UserEntity;
+import com.resume.backend.exceptions.FileNotFoundEx;
 import com.resume.backend.exceptions.InvalidEmailException;
 import com.resume.backend.helperclass.ResumeHelper;
 import com.resume.backend.repository.ResumeAnalysis;
@@ -10,7 +11,9 @@ import com.resume.backend.repository.ResumeRepository;
 import com.resume.backend.services.EmailSender;
 import com.resume.backend.services.EmailService;
 import com.resume.backend.services.JitsiMeetingService;
+import com.resume.backend.services.StorageService;
 import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +26,9 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.exceptions.TemplateInputException;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,10 +43,11 @@ public class EmailServiceImplementation implements EmailService {
     private ResumeHelper resumeHelper;
     private JitsiMeetingService jitsiMeetingService;
     private EmailSender emailSender;
+    private StorageService storageService;
 
 
     @Autowired
-     public  EmailServiceImplementation(JavaMailSender mailSender, TemplateEngine templateEngine, ResumeRepository resumeRepository,ResumeAnalysis resumeAnalysisRepo, ResumeHelper resumeHelper,JitsiMeetingService jitsiMeetingService,EmailSender emailSender) {
+     public  EmailServiceImplementation(JavaMailSender mailSender, TemplateEngine templateEngine, ResumeRepository resumeRepository,ResumeAnalysis resumeAnalysisRepo, ResumeHelper resumeHelper,JitsiMeetingService jitsiMeetingService,EmailSender emailSender,StorageService storageService) {
         this.mailSender = mailSender;
         this.templateEngine = templateEngine;
         this.resumeRepository= resumeRepository;
@@ -48,6 +55,7 @@ public class EmailServiceImplementation implements EmailService {
         this.resumeHelper=resumeHelper;
         this.jitsiMeetingService=jitsiMeetingService;
         this.emailSender=emailSender;
+        this.storageService=storageService;
     }
 
 @EventListener
@@ -65,16 +73,21 @@ public void sendRegistrationEmail(UserEntity userEntity){
 
 
 }
-public boolean sendEmail(Long id, String templateName, String interviewDate, String interviewTime, String interviewMode) {
+public boolean sendInterviewStatusEmail(Long id, String templateName, String interviewDate, String interviewTime, String interviewMode) {
 
     ResumeAnalysisEntity entity = resumeAnalysisRepo.findById(id)
-            .orElseThrow();
+            .orElseThrow(() -> new RuntimeException("Resume not found with id: " + id));
 
     Resume resume = entity.getResume();
     String emailTo = resume.getEmail();
-
+    InputStream resumeStream;
     if (!resumeHelper.isValidGmail(emailTo)) {
         throw new InvalidEmailException("Invalid Email");
+    }
+    try {
+        resumeStream = storageService.loadFile(resume.getFilePath());
+    } catch (IOException e) {
+        throw new FileNotFoundEx("Failed to load resume file");
     }
     entity.setInterviewDate(interviewDate);
     entity.setInterviewTime(interviewTime);
@@ -86,17 +99,21 @@ public boolean sendEmail(Long id, String templateName, String interviewDate, Str
     model.put("interviewDate", interviewDate);
     model.put("interviewTime", interviewTime);
     model.put("interviewMode", interviewMode);
-
-
+    String meetingLink = jitsiMeetingService.generateMeetingLink(resume.getUser().getUsername(), resume.getName());
     Context context = new Context();
     context.setVariables(model);
-    String meetingLink = jitsiMeetingService.generateMeetingLink(resume.getUser().getUsername(), resume.getName());
     context.setVariable("confirmationLink", meetingLink);
     String ModfiedtemplateName = resolveTemplatename(templateName);
     String htmlContent = templateEngine.process(ModfiedtemplateName, context);
     String subject = resolveSubject(templateName);
+    String fileName = Paths.get(resume.getFilePath()).getFileName().toString();
 
-    emailSender.sendHtmlEmail(emailTo, subject, htmlContent);
+    //emailSender.sendHtmlEmail(emailTo, subject, htmlContent);
+    try {
+        emailSender.sendHtmlEmailWithAttachment(emailTo, subject, htmlContent, fileName, resumeStream);
+    } catch (MessagingException e) {
+        throw new RuntimeException("Failed to send email with attachment", e);
+    }
 
     resumeAnalysisRepo.save(entity);
     return true;

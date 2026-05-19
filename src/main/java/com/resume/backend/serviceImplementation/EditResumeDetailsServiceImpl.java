@@ -6,6 +6,7 @@ import com.resume.backend.entity.Resume;
 import com.resume.backend.repository.ResumeRepository;
 import com.resume.backend.services.EditResumeDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,14 +18,14 @@ public class EditResumeDetailsServiceImpl implements EditResumeDetailsService {
         this.resumeRepository = resumeRepository;
     }
     @Transactional
+    @CacheEvict(value = "getAllAnalysiedResumesDto", allEntries = true)
     @Override
     public String editResumeDetails(EditResumeDeatilsDto resumeTempDto) {
         Resume resume = resumeRepository.findById(resumeTempDto.getId()).orElseThrow(() -> new RuntimeException("Resume Not Found with Id " + resumeTempDto.getId()));
         resume.setName(resumeTempDto.getName());
+        resume.setAddress(resumeTempDto.getAddress());
         resume.setEmail(resumeTempDto.getEmail());
         resume.setYearsOfExperience(resumeTempDto.getYearsOfExperience());
-
-
         return "updated sucessfully";
     }
 }

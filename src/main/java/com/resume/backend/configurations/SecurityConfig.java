@@ -31,6 +31,7 @@ public class SecurityConfig {
     private JwtAuthFilter jwtAuthFilter;
     private AuthenticationSuccessHandler oAuth2SuccessHandler;
     private AuthenticationFailureHandler authenticationFailureHandler;
+    List<String> publicPaths = List.of("/auth/login","/auth/refreshToken","/auth/logout","/auth/register","/user/getUserAnalyisedDetails", "/oauth2/**", "/login/oauth2/**","/analyze/status/**","/", "/health");
     public SecurityConfig(JwtAuthFilter jwtAuthFilter, AuthenticationSuccessHandler authenticationSuccessHandler, AuthenticationFailureHandler authenticationFailureHandler) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.oAuth2SuccessHandler=authenticationSuccessHandler;
@@ -45,12 +46,13 @@ public class SecurityConfig {
                // .csrf(csrf -> csrf
                         //.ignoringRequestMatchers("/auth/login","/auth/refreshToken","/auth/logout","/auth/register","/user/getUserAnalyisedDetails","/oauth2/authorization/google","/login/oauth2/code/google","/oauth-success","/ai/upload"))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/login","/auth/refreshToken","/auth/logout","/auth/register","/user/getUserAnalyisedDetails", "/oauth2/**", "/login/oauth2/**").permitAll()
-                        .requestMatchers("/", "/health", "/actuator/health").permitAll()
+                        .requestMatchers(publicPaths.toArray(new String[0])).permitAll()
                         //.requestMatchers("/ai/upload").hasAnyRole("USER","ADMIN")
                          .requestMatchers("/ai/screen-resume").hasRole("ADMIN")
                         .requestMatchers("/chatbot/query").hasAnyRole("ADMIN")
+                        .requestMatchers("/resume/delete/").hasAnyRole("ADMIN","USER")
                         .anyRequest().authenticated())
+                .exceptionHandling(exception -> exception.accessDeniedHandler(new CustomAccessDeniedHandler()).authenticationEntryPoint(new JwtAuthenticationEntryPoint()))
                 .oauth2Login(oauth2->
                         //oauth2.loginPage("/oauth2/authorization/google")
                         oauth2.successHandler(oAuth2SuccessHandler)
