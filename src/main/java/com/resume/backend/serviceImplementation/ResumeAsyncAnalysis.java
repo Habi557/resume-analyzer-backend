@@ -20,6 +20,7 @@ import com.resume.backend.repository.ResumeRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -51,6 +52,8 @@ public class ResumeAsyncAnalysis {
     @Lazy
     @Autowired // ✅ inject self so @Transactional methods go through the proxy
     private ResumeAsyncAnalysis self;
+    @Value("${resume.analysis.ai-concurrency}")
+    private Integer aiConcurrency;
 
     ResumeAsyncAnalysis(ResumeRepository resumeRepository,
                         ConvertingEntityToDtos convertingEntityToDtos,
@@ -106,7 +109,7 @@ public class ResumeAsyncAnalysis {
                 AtomicInteger pageFailed = new AtomicInteger(0);
                 AtomicInteger pageSuccess = new AtomicInteger(0);
 
-                try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+                try (ExecutorService executor = Executors.newFixedThreadPool(aiConcurrency)) {
                     CompletionService<ResumeResult> completionService =
                             new ExecutorCompletionService<>(executor);
 
@@ -121,7 +124,8 @@ public class ResumeAsyncAnalysis {
 
                     for (int i = 0; i < totalSubmitted; i++) {
                         try {
-                            Future<ResumeResult> future = completionService.poll(30, TimeUnit.SECONDS);
+                            //Future<ResumeResult> future = completionService.poll(30, TimeUnit.SECONDS);
+                            Future<ResumeResult> future = completionService.take();
 
                             if (future == null) {
                                 // Timeout — no result came back in 30s
