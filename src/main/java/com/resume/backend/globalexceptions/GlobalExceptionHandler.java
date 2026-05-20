@@ -23,4 +23,10 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.builder().status(401).message("Token Expired").build());
 
     }
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ApiResponse> handleRuntimeException(RuntimeException ex) {
+        return ResponseEntity.internalServerError()
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .body(ApiResponse.builder().status(500).message(ex.getMessage()).build());
+    }
 }
