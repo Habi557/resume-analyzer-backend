@@ -135,51 +135,54 @@ public class ResumeServiceImplementation implements ResumeService {
         return storageService.downloadResume(resumeId);
     }
 
-    public ResumeAnalysisDTO analyzeSingleResumeAsync(ResumeTempDto resume, String jobRole) {
-        try {
-
-            String skills = resume.getSkills()
-                    .stream()
-                    .map(SkillDto::getName)
-                    .collect(Collectors.joining(", "));
-
-            String tempResumeText = """
-                Name: %s
-                Skills: %s
-                Experience: %s years
-                Address: %s
-                """.formatted(
-                    resume.getName(),
-                    skills,
-                    resume.getYearsOfExperience(),
-                    resume.getAddress()
-            );
-
-            String template = resumeHelper.loadPromptTemplate2("prompts/resumeScreeningMatcher.txt");
-            String prompt = resumeHelper.putValuesToPrompt(
-                    template,
-                    Map.of("resumeText", tempResumeText, "jobRole", jobRole)
-            );
-
-            //  AI call (1 per resume)
-            String aiResponse = aiApis.callAiService(prompt);
-
-            String validJson = resumeHelper.extractJson(aiResponse);
-            System.out.println("validJson ++++++++++++++++++++++++++++++");
-            System.out.println(validJson);
-
-            ResumeAnalysisDTO dto = new ObjectMapper().readValue(validJson, ResumeAnalysisDTO.class);
-            dto.setResume(resume);
-            System.out.println("dto ++++++++++++++++++++++++++++++");
-            System.out.println(dto);
-            return dto;
-
-        } catch (Exception e) {
-            throw new RuntimeException("AI processing failed", e);
-        }
-    }
+//    public ResumeAnalysisDTO analyzeSingleResumeAsync(ResumeTempDto resume, String jobRole) {
+//        try {
+//
+//            String skills = resume.getSkills()
+//                    .stream()
+//                    .map(SkillDto::getName)
+//                    .collect(Collectors.joining(", "));
+//
+//            String tempResumeText = """
+//                Name: %s
+//                Skills: %s
+//                Experience: %s years
+//                Address: %s
+//                """.formatted(
+//                    resume.getName(),
+//                    skills,
+//                    resume.getYearsOfExperience(),
+//                    resume.getAddress()
+//            );
+//
+//            String template = resumeHelper.loadPromptTemplate2("prompts/resumeScreeningMatcher.txt");
+//            String prompt = resumeHelper.putValuesToPrompt(
+//                    template,
+//                    Map.of("resumeText", tempResumeText, "jobRole", jobRole)
+//            );
+//
+//            //  AI call (1 per resume)
+//            String aiResponse = aiApis.callAiService(prompt);
+//
+//            String validJson = resumeHelper.extractJson(aiResponse);
+//            System.out.println("validJson ++++++++++++++++++++++++++++++");
+//            System.out.println(validJson);
+//
+//            ResumeAnalysisDTO dto = new ObjectMapper().readValue(validJson, ResumeAnalysisDTO.class);
+//            dto.setResume(resume);
+//            System.out.println("dto ++++++++++++++++++++++++++++++");
+//            System.out.println(dto);
+//            return dto;
+//
+//        } catch (Exception e) {
+//            throw new RuntimeException("AI processing failed", e);
+//        }
+//    }
     //@Async
     public void processResumeAsync(Long resumeId,MultipartFile file) {
+//        if(resumeId!=null){
+//            throw new RuntimeException("Resume ID is required");
+//        }
         ObjectMapper objectMapper = new ObjectMapper();
         Resume resume = resumeRepository.findById(resumeId).orElseThrow();
         try (InputStream fileStream = storageService.loadFile(resume.getFilePath())) {
