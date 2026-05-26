@@ -39,10 +39,12 @@ public class ResumeAnalysisServiceImpl implements ResumeAnalysisService {
 
     private final ResumeAnalysisJobRepository resumeJobRepository;
     private final ResumeAsyncAnalysis resumeAsyncAnalysis;
+    private final ResumeRepository resumeRepository;
 
-    public ResumeAnalysisServiceImpl(ResumeAnalysisJobRepository resumeJobRepository, ResumeAsyncAnalysis resumeAsyncAnalysis) {
+    public ResumeAnalysisServiceImpl(ResumeAnalysisJobRepository resumeJobRepository, ResumeAsyncAnalysis resumeAsyncAnalysis,ResumeRepository resumeRepository) {
         this.resumeJobRepository = resumeJobRepository;
         this.resumeAsyncAnalysis = resumeAsyncAnalysis;
+        this.resumeRepository=resumeRepository;
      }
     @CacheEvict(value = "getAllDashboardDetails", allEntries = true)
     public String analysisResumeWithJd(String jobRole, boolean scanAllresumesIsChecked){
@@ -50,7 +52,7 @@ public class ResumeAnalysisServiceImpl implements ResumeAnalysisService {
         String jobId=UUID.randomUUID().toString();
         ResumeAnalysisJobEntity build = ResumeAnalysisJobEntity.builder().jobId(jobId)
                 .jobRole(jobRole)
-                .status(JobStatus.PENDING).totalResumes(0).processedResumes(0).failedResumes(0).createdAt(LocalDateTime.now()).build();
+                .status(JobStatus.PENDING).totalResumes((int)resumeRepository.count()).processedResumes(0).failedResumes(0).createdAt(LocalDateTime.now()).build();
         resumeJobRepository.save(build);
         resumeAsyncAnalysis.resumeScreenAI(jobRole,jobId,scanAllresumesIsChecked);
         return jobId;

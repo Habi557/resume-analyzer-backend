@@ -53,6 +53,7 @@ public interface ResumeRepository extends JpaRepository<Resume,Long>, JpaSpecifi
     // Dashboard details like totalresume, best Match .. etc
     @Query(value = "CALL get_dashboard_details()", nativeQuery = true)
     DashboardProjection getDashboardDetails();
+    @EntityGraph(attributePaths = {"skills","educationList"})
     Page<Resume> findByScanAllresumesIsCheckedFalse(PageRequest pageRequest);
 
 }
