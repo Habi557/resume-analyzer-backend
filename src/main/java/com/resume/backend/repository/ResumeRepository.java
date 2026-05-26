@@ -1,6 +1,7 @@
 package com.resume.backend.repository;
 
 import com.resume.backend.entity.Resume;
+import com.resume.backend.entity.ResumeStatus;
 import com.resume.backend.projection.DashboardProjection;
 import com.resume.backend.projection.ResumeProjection;
 import org.springframework.data.domain.Page;
@@ -53,7 +54,9 @@ public interface ResumeRepository extends JpaRepository<Resume,Long>, JpaSpecifi
     // Dashboard details like totalresume, best Match .. etc
     @Query(value = "CALL get_dashboard_details()", nativeQuery = true)
     DashboardProjection getDashboardDetails();
-    @EntityGraph(attributePaths = {"skills","educationList"})
-    Page<Resume> findByScanAllresumesIsCheckedFalse(PageRequest pageRequest);
+   // @EntityGraph(attributePaths = {"skills","educationList"})
+    Page<Resume> findByScanAllresumesIsCheckedFalseAndStatus(PageRequest pageRequest, ResumeStatus status);
+    //@EntityGraph(attributePaths ={"skills","educationList"})
+    Page<Resume>findByScanAllresumesIsCheckedTrueAndStatus(PageRequest pageRequest,ResumeStatus status);
 
 }

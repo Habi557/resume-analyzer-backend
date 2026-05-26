@@ -5,10 +5,7 @@ import com.resume.backend.dtos.ResumeAnalysisDTO;
 import com.resume.backend.dtos.ResumeResult;
 import com.resume.backend.dtos.ResumeTempDto;
 import com.resume.backend.dtos.SkillDto;
-import com.resume.backend.entity.JobStatus;
-import com.resume.backend.entity.Resume;
-import com.resume.backend.entity.ResumeAnalysisEntity;
-import com.resume.backend.entity.ResumeAnalysisFailure;
+import com.resume.backend.entity.*;
 import com.resume.backend.exceptions.AiNotRespondingException;
 import com.resume.backend.helperclass.AiApis;
 import com.resume.backend.helperclass.ConvertingEntityToDtos;
@@ -90,7 +87,7 @@ public class ResumeAsyncAnalysis {
 
     @Async("resumeAnalysisExecutor")
     public void resumeScreenAI(String jobRole, String jobId, boolean scanAllresumesIsChecked) {
-        updateJobStatus(jobId, JobStatus.RUNNING, 0, 0);
+        self.updateJobStatus(jobId, JobStatus.RUNNING, 0, 0);
         log.debug("resumeScreenAI started on thread={}, jobId={}",
                 Thread.currentThread().getName(), jobId);
 
@@ -109,7 +106,7 @@ public class ResumeAsyncAnalysis {
                 hasNext = resumePage.hasNext();
 
 //                if (page == 0) {
-//                    // ✅ Commits immediately in its own transaction — visible in DB right away
+//                    // Commits immediately in its own transaction — visible in DB right away
 //                    self.updateTotalCount(jobId, (int) resumePage.getTotalElements());
 //                }
                 page++;
@@ -128,7 +125,7 @@ public class ResumeAsyncAnalysis {
 
                     List<ResumeResult> batchBuffer = new ArrayList<>();
                     int totalSubmitted = resumeInputs.size();
-                    int totalCollected = 0; // ✅ track separately from loop index
+                    int totalCollected = 0; // track separately from loop index
 
                     for (int i = 0; i < totalSubmitted; i++) {
                         try {
@@ -139,13 +136,20 @@ public class ResumeAsyncAnalysis {
 //                                // Timeout — no result came back in 30s
 //                                log.warn("Timeout waiting for resume result at index={}, jobId={}", i, jobId);
 //                                pageFailed.incrementAndGet();
-//                                totalCollected++; // ✅ count timeouts too
+//                                totalCollected++; // count timeouts too
 //                                continue;
 //                            }
 
                             ResumeResult result = future.get();
                             batchBuffer.add(result);
                             totalCollected++;
+                            if(!result.success()){
+                                //self.saveFailedResumes(jobId);
+                                totalFailed++;
+
+
+                            }
+
 
                             // ✅ Flush when batch full OR truly last collected result
                             boolean isLast = (totalCollected == totalSubmitted);
@@ -263,8 +267,8 @@ public class ResumeAsyncAnalysis {
     public Page<ResumeTempDto> fetchResumePage(int page, int pageSize, boolean scanAll) {
         PageRequest pageRequest = PageRequest.of(page, pageSize);
         Page<Resume> chunksOfResumes = scanAll
-                ? resumeRepository.findAll(pageRequest)
-                : resumeRepository.findByScanAllresumesIsCheckedFalse(pageRequest);
+                ? resumeRepository.findByScanAllresumesIsCheckedTrueAndStatus(pageRequest, ResumeStatus.UPLOADED)
+                : resumeRepository.findByScanAllresumesIsCheckedFalseAndStatus(pageRequest,ResumeStatus.UPLOADED);
 
         // ✅ Convert to DTOs inside transaction while session is open
         return chunksOfResumes.map(convertingEntityToDtos::convertResumeDto);
@@ -419,17 +423,20 @@ public class ResumeAsyncAnalysis {
                 log.warn("AI service down for resumeId={}: {}", resume.getId(), cause.getMessage());
                 return ResumeResult.fail("AI service is down, try again later");
             }
-
             log.warn("Failed to analyze resumeId={} name={}: failed reason{}",
                     resume.getId(), resume.getName(), e.getMessage());
 
-            resumeJobRepository.findByJobId(jobId).ifPresent(job -> {
-                job.setFailedResumes(job.getFailedResumes() + 1);
 
-                resumeJobRepository.save(job);
-                log.debug("saved the failed resume {}",job);
-            });
             return ResumeResult.fail(e.getMessage());
         }
+    }
+    private void saveFailedResumes(String jobId) {
+        resumeJobRepository.findByJobId(jobId).ifPresent(job -> {
+            job.setFailedResumes(job.getFailedResumes() + 1);
+
+            resumeJobRepository.save(job);
+            log.debug("saved the failed resume {}",job);
+        });
+
     }
 }
