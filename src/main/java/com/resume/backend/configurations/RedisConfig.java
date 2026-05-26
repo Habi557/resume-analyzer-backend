@@ -43,10 +43,10 @@ public class RedisConfig {
                 .disableCachingNullValues();
     }
     @Bean
-    public RedisCacheManagerBuilderCustomizer redisCacheManagerBuilderCustomizer(){
+    public RedisCacheManagerBuilderCustomizer redisCacheManagerBuilderCustomizer(RedisCacheConfiguration redisCacheConfiguration){
         return (builder) -> builder
-                .withCacheConfiguration("getAllAnalysiedResumesDto", cacheConfiguration().entryTtl(Duration.ofMinutes(2)));
-               // .withCacheConfiguration("getAllDashboardDetails", cacheConfiguration().entryTtl(Duration.ofMinutes(10)));
+                .withCacheConfiguration("getAllAnalysiedResumesDto", redisCacheConfiguration.entryTtl(Duration.ofMinutes(2)))
+                .withCacheConfiguration("getAllDashboardDetails", cacheConfiguration().entryTtl(Duration.ofMillis(30)));
     }
     @Bean
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory) {
