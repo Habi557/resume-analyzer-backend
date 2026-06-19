@@ -17,6 +17,7 @@ public class ResumeAiBackendApplication{
 	public static void main(String[] args) {
 		SpringApplication.run(ResumeAiBackendApplication.class, args);
 
+
     }
 	
 }

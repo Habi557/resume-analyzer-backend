@@ -14,6 +14,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -43,15 +44,10 @@ public class EditResumeDetailsServiceImplTest {
     public void testEditResumeDetails() {
         when(resumeRepository.findById(anyLong())).thenReturn(Optional.of(resume));
         String  message = editResumeDetailsServiceImpl.editResumeDetails(editResumeDeatilsDto);
-//        resumeRepository.findById(anyLong()).ifPresent(resume -> {
-//            resume.setName("Abdulla");
-//            resume.setYearsOfExperience(3.5);
-//            resume.setEmail("habi123@gmail.com");
-//            resumeRepository.save(resume);
-//
-//        });
-        System.out.println(message);
-        verify(resumeRepository).save(resume);
+        verify(resumeRepository, never()).save(resume);
+        assertEquals("Abdulla", resume.getName());
+        assertEquals(3.5, resume.getYearsOfExperience());
+        assertEquals("habi123@gmail.com", resume.getEmail());
         assertEquals("updated sucessfully", message);
 
     }

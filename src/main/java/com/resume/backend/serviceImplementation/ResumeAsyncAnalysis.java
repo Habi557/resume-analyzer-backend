@@ -153,7 +153,7 @@ public class ResumeAsyncAnalysis {
 
                             // ✅ Flush when batch full OR truly last collected result
                             boolean isLast = (totalCollected == totalSubmitted);
-                            log.debug("Flushing batch for jobId={}, batchBuffer.size()={},isLast", jobId,batchBuffer.size(),isLast);
+                            log.debug("Flushing batch for jobId={}, batchBuffer.size()={},isLast={}", jobId,batchBuffer.size(),isLast);
                             log.debug("TotalCollected ={},TotalSubmitted={}",totalCollected,totalSubmitted);
                             if (batchBuffer.size() >= batchSize || isLast) {
 
