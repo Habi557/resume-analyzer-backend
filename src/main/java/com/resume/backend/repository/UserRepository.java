@@ -1,6 +1,7 @@
 package com.resume.backend.repository;
 
 import com.resume.backend.entity.UserEntity;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -12,4 +13,6 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     UserEntity findByUserNameCaseSensitive(String username);
     boolean existsByUsername(String userName);
     Optional<UserEntity> findByEmail(String email);
+    @EntityGraph(attributePaths = {})
+    Optional<UserEntity> findByUsername(String username);
 }

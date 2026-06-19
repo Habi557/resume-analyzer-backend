@@ -18,7 +18,7 @@ public class PollingServiceImpl implements PollingService {
     }
     @Override
     public ResumeAnalysisPollingDto getPolling(String jobId) {
-        log.info("Getting polling for job id: {}", jobId);
+        //log.info("Getting polling for job id: {}", jobId);
         ResumeAnalysisPollingDto resumeAnalysisPollingDto = resumeAnalysisJobRepository.findByJobId(jobId).map(job -> modelMapper.map(job, ResumeAnalysisPollingDto.class))
                 .orElseThrow(() -> new RuntimeException("Job not found"));
 

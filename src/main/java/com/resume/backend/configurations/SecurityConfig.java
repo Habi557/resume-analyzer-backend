@@ -31,7 +31,7 @@ public class SecurityConfig {
     private JwtAuthFilter jwtAuthFilter;
     private AuthenticationSuccessHandler oAuth2SuccessHandler;
     private AuthenticationFailureHandler authenticationFailureHandler;
-    List<String> publicPaths = List.of("/auth/login","/auth/refreshToken","/auth/logout","/auth/register","/user/getUserAnalyisedDetails", "/oauth2/**", "/login/oauth2/**","/analyze/status/**","/", "/health");
+    List<String> publicPaths = List.of("/auth/login","/auth/refreshToken","/auth/logout","/auth/register","/user/getUserAnalyisedDetails", "/oauth2/**", "/login/oauth2/**","/analyze/status/**","/", "/health","/actuator/**");
     public SecurityConfig(JwtAuthFilter jwtAuthFilter, AuthenticationSuccessHandler authenticationSuccessHandler, AuthenticationFailureHandler authenticationFailureHandler) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.oAuth2SuccessHandler=authenticationSuccessHandler;

@@ -13,9 +13,6 @@ public class EmailController {
     EmailService emailService;
     @GetMapping("/sendEmail/{id}")
     public ResponseEntity<String> sendEmail(@PathVariable("id") Long id, @RequestParam String templateName, @RequestParam(required = false) String interviewDate, @RequestParam(required = false) String interviewTime, @RequestParam(required = false) String interviewMode){
-       System.out.println("interviewDate "+ interviewDate);
-        System.out.println("interviewTime "+ interviewTime);
-        System.out.println("interviewMode "+ interviewMode);
 
         boolean emailStatus = emailService.sendInterviewStatusEmail(id, templateName, interviewDate, interviewTime, interviewMode );
         if (emailStatus){

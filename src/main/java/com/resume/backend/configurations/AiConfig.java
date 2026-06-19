@@ -17,7 +17,8 @@ public class AiConfig {
     @Bean
     public ChatClient chatClient(OllamaChatModel ollamaChatModel) {
         return ChatClient.builder(ollamaChatModel)
-                .defaultOptions(OllamaOptions.builder().model("qwen2.5:3b").build())
+                .defaultOptions(OllamaOptions.builder().model("qwen2.5-coder:3b").build())
+                //.defaultOptions(OllamaOptions.builder().model("qwen2.5:3b").build())
                 .build();
     }
     @Bean

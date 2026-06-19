@@ -25,6 +25,7 @@ import com.resume.backend.services.ResumeParser;
 import com.resume.backend.services.ResumeService;
 import com.resume.backend.services.StorageService;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.ai.chat.client.ChatClient;
@@ -67,6 +68,7 @@ import org.springframework.web.client.RestClientException;
 
 
 @Service
+@Slf4j
 public class ResumeServiceImplementation implements ResumeService {
    // public final ChatClient chatClient;
     private AiApis aiApis;
@@ -264,11 +266,12 @@ public class ResumeServiceImplementation implements ResumeService {
             throw new RuntimeException("Null pointerexception occured");
         }
         catch (RestClientException e){
+            log.error("AI service unavailable, from service layer: {}", e.getMessage());
             throw new AiNotRespondingException("Ai service is down try again later");
         }
         catch (Exception e) {
             resume.setStatus(ResumeStatus.FAILED);
-            throw new RuntimeException("Exception occured");
+            throw new RuntimeException(e.getMessage());
         }
     }
 
