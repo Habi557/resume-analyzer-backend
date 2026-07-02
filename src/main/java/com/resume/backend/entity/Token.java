@@ -17,6 +17,8 @@ public class Token {
     private Long id;
     @Column(unique = true,length = 500)
     private String token;
+    @Column(name = "refresh_token", unique = true,length = 500)
+    private String refreshToken;
     private boolean revoked;
     private boolean expired;
     @Enumerated(EnumType.STRING)

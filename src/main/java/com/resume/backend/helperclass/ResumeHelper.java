@@ -752,19 +752,18 @@ public String extractTextFromDocx(File savedFile) throws IOException {
 
         Analyze the resume below and identify potential red flags from a recruiter perspective.
 
-        Rules:
-        Detect red flags using the following rules:
-        - Missing name → add "Name missing"
-        - Missing phone → add "Phone number missing"
-        - Missing email → add "Email missing"
-        - Missing skills → add "No technical skills mentioned"
-        - Less than 1 year experience → add "Very low experience"
-        - Education missing → add "Education details missing"
-        - Address missing → add "City not mentioned"
-        - Gaps > 6 months in experience → add "Employment gaps identified"
-        - Inconsistent dates → add "Date inconsistencies found"
-        - If any extracted field is empty → add "Incomplete profile information"
-        - redFlags → list of issues like missing info, job gaps, no skills, inconsistent dates, etc.
+                Rules:
+                - Return ONLY issues that actually exist.
+                - Do NOT invent information.
+                - Do NOT assume missing information unless it cannot be found.
+                - Do NOT add duplicate red flags.
+                - If there are no red flags, return an empty array.
+  
+                Consider the following as red flags:
+                - Employment gaps greater than 6 months → "Employment gaps identified"
+                - Overlapping or inconsistent employment dates → "Date inconsistencies found"
+                - Resume contains obvious spelling or grammar mistakes → "Multiple spelling or grammar errors"
+                - Resume appears incomplete or contains placeholder text → "Incomplete resume"
 
         Return ONLY valid JSON in the following format:
         {

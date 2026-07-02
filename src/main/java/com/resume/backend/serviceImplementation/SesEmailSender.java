@@ -2,15 +2,10 @@ package com.resume.backend.serviceImplementation;
 
 import com.resume.backend.services.EmailSender;
 import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
 import org.springframework.context.annotation.Profile;
-import org.springframework.core.io.InputStreamSource;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.ses.SesClient;
 import software.amazon.awssdk.services.ses.model.*;
-
-import java.io.IOException;
 import java.io.InputStream;
 
 @Service

@@ -10,10 +10,8 @@ import com.resume.backend.entity.UserEntity;
 import com.resume.backend.repository.TokenRepository;
 import com.resume.backend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
@@ -21,11 +19,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -55,7 +51,6 @@ public class AuthServiceImplTest {
     private UserEntity testUser;
     private Authentication authentication;
     private  Token token;
-    private List<Token> listOfTokens;
 
     @BeforeEach
     void setUp() {
@@ -68,10 +63,11 @@ public class AuthServiceImplTest {
         token = new Token();
         token.setId(1L);
         token.setToken("token");
+        token.setRefreshToken("refresh_token");
         token.setTokenType(TokenType.BEARER);
         token.setExpired(false);
         token.setRevoked(false);
-       listOfTokens= List.of(token);
+        token.setUser(testUser);
 
         authentication = mock(Authentication.class);
       // List<SimpleGrantedAuthority> listOfRoles = List.of(new SimpleGrantedAuthority("ROLE_USER"));
@@ -105,12 +101,13 @@ public class AuthServiceImplTest {
         // verify that revokeAllUserTokens is called
         verify(authService).revokeAllUserTokens(testUser.getId());
         // verify that saveUserToken is called
-        verify(authService).saveUserToken(testUser, "access_token");
+        verify(authService).saveUserToken(testUser, "access_token", "refresh_token");
 
     }
     @Test
     void testRefreshToken_Success() {
         when(jwtUtils.extractUsername(anyString())).thenReturn("habi");
+        when(tokenRepository.findByRefreshTokenAndExpiredFalseAndRevokedFalse(anyString())).thenReturn(Optional.of(token));
         when(userRepository.findByUserNameCaseSensitive(anyString())).thenReturn(testUser);
         when(jwtUtils.validateToken(anyString(), any(User.class))).thenReturn(true);
         when(jwtUtils.generateToken(anyString())).thenReturn("access_token");
@@ -124,7 +121,7 @@ public class AuthServiceImplTest {
         assertTrue(authResponse.getRoles().contains("ROLE_USER"));
         assertTrue(authResponse.getRoles().contains("ROLE_ADMIN"));
         verify(authService).revokeAllUserTokens(anyLong());
-        verify(authService).saveUserToken(testUser, "access_token");
+        verify(authService).saveUserToken(testUser, "access_token", "refresh_token");
 
 
     }
