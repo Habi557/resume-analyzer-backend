@@ -143,26 +143,6 @@ public class ChatbotImplementation implements ChatbotService {
         return response.toString();
     }
 
-//    private String extractSkillFromText(String message) {
-//        // This regex extracts words after "with", "having", or "skills"
-//        Pattern pattern = Pattern.compile("(?:with|having|skills?)\\s+([a-zA-Z0-9\\s,]+)");
-//        Matcher matcher = pattern.matcher(message.toLowerCase());
-//
-//        if (matcher.find()) {
-//            return matcher.group(1).trim(); // e.g., "java", "python, spring"
-//        }
-//        return null;
-//    }
-
-//    private Double extractExperienceFromText(String message) {
-//        Pattern pattern = Pattern.compile("(\\d+(\\.\\d+)?)\\s*\\+?\\s*years?");
-//        Matcher matcher = pattern.matcher(message.toLowerCase());
-//
-//        if (matcher.find()) {
-//            return Double.parseDouble(matcher.group(1));
-//        }
-//        return null;
-//    }
 public static Specification<Resume> hasAnyAlias(List<String> aliases) {
     return (root, query, cb) -> {
         Join<Object, Object> skillJoin = root.join("skills", JoinType.INNER);

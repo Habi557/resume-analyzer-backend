@@ -1,23 +1,16 @@
 package com.resume.backend.serviceImplementation;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.resume.backend.StrategyFactory.ResumeExtractionStrategyFactory;
-import com.resume.backend.configurations.AiConfig;
 import com.resume.backend.dtos.*;
 import com.resume.backend.entity.*;
 import com.resume.backend.exceptions.AiNotRespondingException;
-import com.resume.backend.exceptions.FileNotFoundEx;
-import com.resume.backend.exceptions.InvaidFileFormatException;
-import com.resume.backend.exceptions.JsonProcessingRuntimeException;
 import com.resume.backend.helperclass.AiApis;
 import com.resume.backend.helperclass.ConvertingEntityToDtos;
 import com.resume.backend.helperclass.ResumeHelper;
 import com.resume.backend.helperclass.ResumeSection;
-import com.resume.backend.projection.DashboardProjection;
-import com.resume.backend.projection.ResumeProjection;
 import com.resume.backend.repository.ResumeAnalysis;
 import com.resume.backend.repository.ResumeRepository;
 import com.resume.backend.repository.UserRepository;
@@ -26,42 +19,16 @@ import com.resume.backend.services.ResumeService;
 import com.resume.backend.services.StorageService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.modelmapper.ModelMapper;
-import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.data.web.SpringDataWebProperties;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.InputStreamResource;
-import org.springframework.core.io.Resource;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientException;
 
@@ -137,50 +104,6 @@ public class ResumeServiceImplementation implements ResumeService {
         return storageService.downloadResume(resumeId);
     }
 
-//    public ResumeAnalysisDTO analyzeSingleResumeAsync(ResumeTempDto resume, String jobRole) {
-//        try {
-//
-//            String skills = resume.getSkills()
-//                    .stream()
-//                    .map(SkillDto::getName)
-//                    .collect(Collectors.joining(", "));
-//
-//            String tempResumeText = """
-//                Name: %s
-//                Skills: %s
-//                Experience: %s years
-//                Address: %s
-//                """.formatted(
-//                    resume.getName(),
-//                    skills,
-//                    resume.getYearsOfExperience(),
-//                    resume.getAddress()
-//            );
-//
-//            String template = resumeHelper.loadPromptTemplate2("prompts/resumeScreeningMatcher.txt");
-//            String prompt = resumeHelper.putValuesToPrompt(
-//                    template,
-//                    Map.of("resumeText", tempResumeText, "jobRole", jobRole)
-//            );
-//
-//            //  AI call (1 per resume)
-//            String aiResponse = aiApis.callAiService(prompt);
-//
-//            String validJson = resumeHelper.extractJson(aiResponse);
-//            System.out.println("validJson ++++++++++++++++++++++++++++++");
-//            System.out.println(validJson);
-//
-//            ResumeAnalysisDTO dto = new ObjectMapper().readValue(validJson, ResumeAnalysisDTO.class);
-//            dto.setResume(resume);
-//            System.out.println("dto ++++++++++++++++++++++++++++++");
-//            System.out.println(dto);
-//            return dto;
-//
-//        } catch (Exception e) {
-//            throw new RuntimeException("AI processing failed", e);
-//        }
-//    }
-    //@Async
     public void processResumeAsync(Long resumeId,MultipartFile file) {
 //        if(resumeId!=null){
 //            throw new RuntimeException("Resume ID is required");
