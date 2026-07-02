@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.mail.MailException;
+import org.springframework.mail.MailSendException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessagePreparator;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ import org.thymeleaf.exceptions.TemplateInputException;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.UnknownHostException;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
@@ -67,7 +69,11 @@ public void sendRegistrationEmail(UserEntity userEntity){
         context.setVariables(map);
         String htmlContent = templateEngine.process("registration-success", context);
         String emailTo = userEntity.getEmail();
-        emailSender.sendHtmlEmail(emailTo, subject, htmlContent);
+        try {
+            emailSender.sendHtmlEmail(emailTo, subject, htmlContent);
+        }catch ( MailException ex){
+            throw new MailSendException("Invalid Email");
+        }
         log.info("Email sent to {}", emailTo);
 
 
@@ -99,10 +105,12 @@ public boolean sendInterviewStatusEmail(Long id, String templateName, String int
     model.put("interviewDate", interviewDate);
     model.put("interviewTime", interviewTime);
     model.put("interviewMode", interviewMode);
-    String meetingLink = jitsiMeetingService.generateMeetingLink(resume.getUser().getUsername(), resume.getName());
     Context context = new Context();
     context.setVariables(model);
-    context.setVariable("confirmationLink", meetingLink);
+    if(interviewMode.equals("Online")) {
+        String meetingLink = jitsiMeetingService.generateMeetingLink(resume.getUser().getUsername(), resume.getName());
+        context.setVariable("confirmationLink", meetingLink);
+    }
     String ModfiedtemplateName = resolveTemplatename(templateName);
     String htmlContent = templateEngine.process(ModfiedtemplateName, context);
     String subject = resolveSubject(templateName);

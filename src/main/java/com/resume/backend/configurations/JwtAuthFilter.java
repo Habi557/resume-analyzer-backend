@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 
 import com.resume.backend.exceptions.JwtExpiredAuthenticationException;
+import com.resume.backend.exceptions.TokenExpiredException;
 import com.resume.backend.repository.TokenRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,11 +34,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 	private JwtUtils jwtService;
 	private UserDetailsService userDetailsService;
 	private TokenRepository tokenRepository;
+    private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
-	public JwtAuthFilter(JwtUtils jwtService, UserDetailsService userDetailsService,TokenRepository tokenRepository) {
+	public JwtAuthFilter(JwtUtils jwtService, UserDetailsService userDetailsService,TokenRepository tokenRepository,JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint) {
 		this.jwtService = jwtService;
 		this.userDetailsService = userDetailsService;
 		this.tokenRepository = tokenRepository;
+        this.jwtAuthenticationEntryPoint=jwtAuthenticationEntryPoint;
 	}
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -84,11 +87,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 			if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 				UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 				Boolean isStoredValid = tokenRepository.findByToken(token).map(t -> !t.isExpired() && !t.isRevoked()).orElse(false);
+               // tokenRepository.findByToken(token).map(t-> !t.isExpired() || ! t.isRevoked()).orElseThrow(()-> new TokenExpiredException("Token Expired Login agian"));
                 tokenRepository.findByToken(token)
                         .ifPresentOrElse(
                                 t -> System.out.println("DB TOKEN FOUND"),
                                 () -> System.out.println("DB TOKEN NOT FOUND")
                         );
+                if(!isStoredValid){
+                    SecurityContextHolder.clearContext();
+                    jwtAuthenticationEntryPoint.commence(request, response, new JwtExpiredAuthenticationException("Token revoked. please login again from authfilter"));
+                    return;
+                }
 				if (jwtService.validateToken(token, userDetails) && isStoredValid) {
 					UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails,
 							null, userDetails.getAuthorities());

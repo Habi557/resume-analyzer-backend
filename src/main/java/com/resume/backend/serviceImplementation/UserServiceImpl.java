@@ -26,7 +26,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     @Override
     public List<ResumeAnalysisDTO> getAllUsersAnalysizedResumes(String username) {
-        List<ResumeAnalysisEntity> allUsersAnalysizedResumes = resumeAnalysis.getAllUsersAnalysizedResumes(username);
+        List<ResumeAnalysisEntity> allUsersAnalysizedResumes = resumeAnalysis.getAllUsersAnalysizedResumes(username).orElseThrow(() -> new RuntimeException("No resumes found for user"));
         List<ResumeAnalysisDTO> listofResumeAnalysisDTO = allUsersAnalysizedResumes.stream().map(convertingEntityToDtos::convertResumeAnalysisEntityToResumeAnalysisDTO).collect(Collectors.toList());
         return listofResumeAnalysisDTO;
     }

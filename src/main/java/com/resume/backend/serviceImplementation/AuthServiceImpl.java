@@ -62,7 +62,7 @@ public class AuthServiceImpl  implements AuthService {
         String refreshToken = jwtUtils.generateRefreshToken(authenticate.getName());
         UserEntity user = userRepository.findByUserNameCaseSensitive(authenticate.getName());
         revokeAllUserTokens(user.getId());
-        saveUserToken(user, accessToken);
+        saveUserToken(user, accessToken,refreshToken);
         List<String> listOfRoles = user.getRoles().stream().map(role -> role.getRoleName()).map(roleName -> new String(roleName)).toList();
         return buildAuthResponse(listOfRoles,accessToken,refreshToken,authenticate.getName());
     }
@@ -72,6 +72,10 @@ public class AuthServiceImpl  implements AuthService {
     public AuthResponse refreshToken(String refreshToken) {
         try {
             String username = jwtUtils.extractUsername(refreshToken);
+            Token token = tokenRepository.findByRefreshTokenAndExpiredFalseAndRevokedFalse(refreshToken).orElseThrow(()-> new RuntimeException("No Refresh Token Found"));
+            if(token == null || token.isExpired() || token.isRevoked()){
+                throw new TokenExpiredException("Refresh token is not valid");
+            }
             String password;
             UserEntity userEntity = userRepository.findByUserNameCaseSensitive(username);
             List<String> listOfRoles = userEntity.getRoles().stream().map(role -> role.getRoleName()).map(roleName -> new String(roleName)).toList();
@@ -87,7 +91,7 @@ public class AuthServiceImpl  implements AuthService {
             }
             String accessToken = jwtUtils.generateToken(username);
             revokeAllUserTokens(userEntity.getId());
-            saveUserToken(userEntity, accessToken);
+            saveUserToken(userEntity, accessToken, refreshToken);
             return buildAuthResponse(listOfRoles,accessToken,refreshToken, username);
         }catch (ExpiredJwtException ex){
             throw new TokenExpiredException("Refresh token is expired Login agian");
@@ -97,13 +101,14 @@ public class AuthServiceImpl  implements AuthService {
 
     @Override
     public void logout(String accessToken) {
-        Optional<Token> byToken = tokenRepository.findByToken(accessToken);
-        if(byToken.isPresent()) {
-            Token token = byToken.get();
-            //token.setExpired(true);
-            token.setRevoked(true);
-            tokenRepository.save(token);
+        if (accessToken != null && accessToken.startsWith("Bearer ")) {
+            accessToken = accessToken.substring(7);
         }
+        Token token = tokenRepository.findByToken(accessToken).orElseThrow(()-> new RuntimeException("Token Not Found"));
+        token.setRevoked(true);
+        token.setExpired(true);
+        tokenRepository.save(token);
+
     }
 
     @Override
@@ -166,10 +171,11 @@ public class AuthServiceImpl  implements AuthService {
                 .build();
     }
 
-    public void saveUserToken(UserEntity user, String accessToken) {
+    public void saveUserToken(UserEntity user, String accessToken,String refreshToken) {
         Token token = Token.builder()
                 .user(user)
                 .token(accessToken)
+                .refreshToken(refreshToken)
                 .tokenType(TokenType.BEARER)
                 .expired(false)
                 .revoked(false)

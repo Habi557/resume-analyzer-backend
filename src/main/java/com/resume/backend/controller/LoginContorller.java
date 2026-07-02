@@ -46,7 +46,7 @@ public class LoginContorller {
         return ResponseEntity.ok(authResponse);
     }
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(@RequestBody String accessToken) {
+    public ResponseEntity<String> logout(@RequestHeader("Authorization") String accessToken) {
         authService.logout(accessToken);
         ResponseCookie cookie = ResponseCookie.from("refreshToken", "")
                 .httpOnly(true)

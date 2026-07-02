@@ -11,11 +11,12 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ResumeAnalysis  extends JpaRepository<ResumeAnalysisEntity,Long>  , JpaSpecificationExecutor<ResumeAnalysisEntity> {
     @Query("SELECT ra FROM ResumeAnalysisEntity ra WHERE ra.resume.user.username = :username")
-    List<ResumeAnalysisEntity> getAllUsersAnalysizedResumes(@Param("username") String username);
+    Optional<List<ResumeAnalysisEntity>> getAllUsersAnalysizedResumes(@Param("username") String username);
     @Query("SELECT DISTINCT ra FROM ResumeAnalysisEntity ra " +
             "JOIN ra.resume r " +
             "JOIN r.skills s " +
