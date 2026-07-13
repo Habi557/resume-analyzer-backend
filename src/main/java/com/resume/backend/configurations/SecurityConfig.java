@@ -29,13 +29,15 @@ import java.util.List;
 public class SecurityConfig {
 
     private JwtAuthFilter jwtAuthFilter;
+    private UserRateLimitFilter userRateLimitFilter;
     private AuthenticationSuccessHandler oAuth2SuccessHandler;
     private AuthenticationFailureHandler authenticationFailureHandler;
     List<String> publicPaths = List.of("/auth/login","/auth/refreshToken","/auth/logout","/auth/register","/user/getUserAnalyisedDetails", "/oauth2/**", "/login/oauth2/**","/analyze/status/**","/", "/health","/actuator/**");
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter, AuthenticationSuccessHandler authenticationSuccessHandler, AuthenticationFailureHandler authenticationFailureHandler) {
+    public SecurityConfig(JwtAuthFilter jwtAuthFilter, AuthenticationSuccessHandler authenticationSuccessHandler, AuthenticationFailureHandler authenticationFailureHandler,UserRateLimitFilter userRateLimitFilter) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.oAuth2SuccessHandler=authenticationSuccessHandler;
         this.authenticationFailureHandler=authenticationFailureHandler;
+        this.userRateLimitFilter = userRateLimitFilter;
     }
 
     @Bean
@@ -63,7 +65,8 @@ public class SecurityConfig {
 
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .exceptionHandling(exception -> exception.accessDeniedHandler(new CustomAccessDeniedHandler()).authenticationEntryPoint(new JwtAuthenticationEntryPoint()))
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(userRateLimitFilter, JwtAuthFilter.class);
 
 
         return http.build();

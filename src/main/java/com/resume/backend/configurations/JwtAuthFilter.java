@@ -74,7 +74,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 //			filterChain.doFilter(request, response);
 //			return;
 //		}
-
+        log.info("JWT Filter started");
         String authHeader = request.getHeader("Authorization");
 		String token = null;
 		String username = null;

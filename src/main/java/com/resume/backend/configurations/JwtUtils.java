@@ -18,8 +18,8 @@ import java.util.function.Function;
 public class JwtUtils {
 
     private static final String SECRET = "yyu2djATzrDXKBhxVW5I8TohcSjEuKWzZ4d6+mRz9EU="; // Base64 encoded key
-    private static final long Access_TOKEN_EXPIRATION = 5* 60 * 1000;
-    private static final long Refresh_TOKEN_EXPIRATION = 10 * 60 * 1000;
+    private static final long Access_TOKEN_EXPIRATION = 1* 60 * 1000;
+    private static final long Refresh_TOKEN_EXPIRATION = 2 * 60 * 1000;
     private Key getSignKey() {
         byte[] keyBytes = Decoders.BASE64.decode(SECRET);
         return Keys.hmacShaKeyFor(keyBytes);
