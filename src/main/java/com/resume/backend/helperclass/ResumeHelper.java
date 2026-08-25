@@ -569,9 +569,27 @@ public String extractTextFromDocx(File savedFile) throws IOException {
         StringBuilder sb = new StringBuilder();
 
         sb.append("""
-    Extract ONLY the following missing fields.
-    Return ONLY valid JSON.
-    Do NOT modify existing values.
+                You are a resume information extraction system.
+                Extract ONLY the missing fields listed below from the resume.
+                IMPORTANT RULES:
+                1. Return ONLY valid JSON.
+                2. Do not include markdown, explanations, or extra text.
+                3. Do NOT modify, infer, or return any fields other than the requested missing fields.
+                4. If a field cannot be found, return an empty value:
+                   - arrays: []
+                   - strings: ""
+                5. Preserve factual information from the resume.
+                6. For skills, extract technical and professional tools/technologies explicitly mentioned in the resume.
+                7. Prioritize the "technical skills" section, but also extract relevant technical skills mentioned elsewhere in the resume.
+                8. Return each skill as a separate string.
+                9. Remove duplicate skills.
+                10. Normalize obvious variations:
+                   - "java (8, 17)" → "Java"
+                   - "bootstrap 5" → "Bootstrap"
+                   - "junit 5" → "JUnit 5"
+                   - "rest api" or "restful api" → "RESTful APIs"
+                   - "aws cloud" → "AWS"
+                11. Do not extract generic soft skills such as "communication", "teamwork", or "problem solving" unless explicitly requested.
 
     Missing fields:
     """);
@@ -591,10 +609,29 @@ public String extractTextFromDocx(File savedFile) throws IOException {
         sb.append("}\n\n");
         if(missingFields.contains(Field.ADDRESS)){
             sb.append("""
-            - Address format: "City, State, Country"
-            - Extract city, state, country from resume
-            - If only state is present, infer major city (e.g., Telangana → Hyderabad)
-            - Normalize country codes (IN → India)""");
+            
+                    Address rules:
+                    - Extract city, state, and country from the resume.
+                    - Format: "City, State, Country"
+                    - Normalize country codes:
+                      - "IN" → "India"
+                    - If only a state is explicitly present and no city is present, infer the major city for that state.
+                    - Example:
+                      "telangana, in" → "Hyderabad, Telangana, India"
+                    Skill extraction rules:
+                    - Extract technologies, programming languages, frameworks, libraries, databases, cloud services, DevOps tools, testing tools, APIs, architectural technologies, and AI/ML technologies.
+                    - Each skill must be a separate array item.
+                    - Do not return categories such as "Frontend", "Backend", or "Database".
+                    - Extract skills from the "technical skills" section AND other resume sections.
+                    - Remove duplicates case-insensitively.
+                    Certifications:
+                    - Extract only explicitly mentioned certifications.
+                    - Do not infer certifications from education, skills, or work experience.
+                    Redflags:
+                    - Extract only clear resume red flags or inconsistencies explicitly visible in the resume.
+                    - Do not invent problems.
+                    - If no red flags are found, return [].
+            """);
         }
         sb.append("\n\nResume:\n");
         sb.append(resumeText);
@@ -748,28 +785,56 @@ public String extractTextFromDocx(File savedFile) throws IOException {
     public String buildPromptForFlags(String resumeText) {
 
         return """
-        You are an ATS and recruiter assistant.
-
-        Analyze the resume below and identify potential red flags from a recruiter perspective.
-
-                Rules:
-                - Return ONLY issues that actually exist.
+                You are an ATS and recruiter assistant.
+                
+                Analyze the resume and identify potential red flags that are explicitly supported by the resume content.
+                
+                IMPORTANT:
+                - Return ONLY valid JSON.
+                - Do NOT include explanations, markdown, or additional text.
                 - Do NOT invent information.
-                - Do NOT assume missing information unless it cannot be found.
+                - Do NOT report a red flag unless it can be reasonably determined from the resume.
                 - Do NOT add duplicate red flags.
-                - If there are no red flags, return an empty array.
-  
-                Consider the following as red flags:
-                - Employment gaps greater than 6 months → "Employment gaps identified"
-                - Overlapping or inconsistent employment dates → "Date inconsistencies found"
-                - Resume contains obvious spelling or grammar mistakes → "Multiple spelling or grammar errors"
-                - Resume appears incomplete or contains placeholder text → "Incomplete resume"
-
-        Return ONLY valid JSON in the following format:
-        {
-          "redflags": [ "list", "of","strings"]
-        }
-
+                - If no red flags are found, return an empty array.
+                
+                RED FLAG DETECTION RULES:
+                
+                1. Employment gaps:
+                   - Extract all employment and work experience date ranges.
+                   - Compare consecutive employment periods chronologically.
+                   - If the gap between two employment periods is greater than 6 months, return:
+                     "Employment gaps identified"
+                   - Do NOT treat education, certifications, or personal projects as employment unless explicitly described as employment.
+                   - If the last employment ended more than 6 months ago and no current employment is listed, return:
+                     "Employment gaps identified"
+                   - A personal project with dates such as "2024 - Present" does NOT count as employment.
+                
+                2. Date inconsistencies:
+                   - Detect overlapping employment periods.
+                   - Detect impossible or contradictory dates.
+                   - Detect inconsistent dates for the same company, role, or experience.
+                   - If found, return:
+                     "Date inconsistencies found"
+                
+                3. Spelling or grammar:
+                   - Identify obvious and repeated spelling or grammar mistakes.
+                   - Ignore capitalization differences caused by resume text extraction.
+                   - Ignore formatting issues caused by PDF/text extraction.
+                   - Only return the following if multiple obvious errors exist:
+                     "Multiple spelling or grammar errors"
+                
+                4. Incomplete resume:
+                   - Detect placeholder text such as:
+                     "Lorem ipsum", "TBD", "XXX", "[Insert text]", or similar unfinished content.
+                   - Detect clearly incomplete sections.
+                   - If found, return:
+                     "Incomplete resume"
+                
+                Return ONLY valid JSON in exactly this format:
+                
+                {
+                  "redflags": []
+                }
         ===== RESUME START =====
         %s
         ===== RESUME END =====

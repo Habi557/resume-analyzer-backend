@@ -7,6 +7,7 @@ import com.resume.backend.dtos.ResumeTempDto;
 import com.resume.backend.dtos.SkillDto;
 import com.resume.backend.entity.*;
 import com.resume.backend.exceptions.AiNotRespondingException;
+import com.resume.backend.exceptions.JobLaunchException;
 import com.resume.backend.helperclass.AiApis;
 import com.resume.backend.helperclass.ConvertingEntityToDtos;
 import com.resume.backend.helperclass.ResumeHelper;
@@ -17,6 +18,14 @@ import com.resume.backend.repository.ResumeRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobParameters;
+import org.springframework.batch.core.JobParametersBuilder;
+import org.springframework.batch.core.JobParametersInvalidException;
+import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.batch.core.repository.JobExecutionAlreadyRunningException;
+import org.springframework.batch.core.repository.JobInstanceAlreadyCompleteException;
+import org.springframework.batch.core.repository.JobRestartException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
@@ -31,6 +40,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 @Component
@@ -55,6 +65,9 @@ public class ResumeAsyncAnalysis {
     private String template;
     @Value("${resume.analysis.page-size}")
     private Integer pageSize;
+    private final JobLauncher jobLauncher;
+    private Job job;
+    private final EmbeddingService embeddingService;
 
     ResumeAsyncAnalysis(ResumeRepository resumeRepository,
                         ConvertingEntityToDtos convertingEntityToDtos,
@@ -64,7 +77,8 @@ public class ResumeAsyncAnalysis {
                         AiApis aiApis,
                         ResumeAnalysisJobRepository resumeJobRepository,
                         ObjectMapper objectMapper,
-                        ResumeAnalysisFailureRepository resumeAnalysisFailureRepository) {
+                        ResumeAnalysisFailureRepository resumeAnalysisFailureRepository,
+                        JobLauncher jobLauncher, Job job ,EmbeddingService embeddingService) {
         this.resumeRepository = resumeRepository;
         this.convertingEntityToDtos = convertingEntityToDtos;
         this.modelMapper = modelMapper;
@@ -74,6 +88,9 @@ public class ResumeAsyncAnalysis {
         this.resumeJobRepository = resumeJobRepository;
         this.objectMapper = objectMapper;
         this.resumeAnalysisFailureRepository = resumeAnalysisFailureRepository;
+        this.jobLauncher = jobLauncher;
+        this.job = job;
+        this.embeddingService = embeddingService;
     }
     @PostConstruct
     public void init() {
@@ -84,19 +101,40 @@ public class ResumeAsyncAnalysis {
     // =====================================================================
     // MAIN ASYNC METHOD — NO @Transactional here (child methods have their own)
     // =====================================================================
-
     @Async("resumeAnalysisExecutor")
+    public void test(String jobRole, String jobId, boolean scanAllresumesIsChecked){
+        JobParameters jobParameters = new JobParametersBuilder()
+                //.addString("jobRole", jobRole)
+                .addString("jobId", jobId)
+                .addString("scanAllresumesIsChecked",String.valueOf(scanAllresumesIsChecked))
+                        .toJobParameters();
+
+       // resumeJobRepository.save(ResumeAnalysisJobEntity.builder().jobId(jobId).jobRole(jobRole).status(JobStatus.PENDING).build());
+       // log.info("Embedding service logs {}", embeddingService.getEmbedding(jobRole));
+        try {
+            jobLauncher.run(job, jobParameters);
+        } catch (JobExecutionAlreadyRunningException e) {
+            throw new JobLaunchException("Job is alreday running",e);
+        } catch (JobRestartException e) {
+            throw new JobLaunchException("Job cannot be restarted",e);
+        } catch (JobInstanceAlreadyCompleteException e) {
+            throw new JobLaunchException("Job instance already completed",e);
+        } catch (JobParametersInvalidException e) {
+            throw new JobLaunchException("Invalid job parameters.",e);
+        }
+    }
+    //@Async("resumeAnalysisExecutor")
     public void resumeScreenAI(String jobRole, String jobId, boolean scanAllresumesIsChecked) {
         self.updateJobStatus(jobId, JobStatus.RUNNING, 0, 0);
         log.debug("resumeScreenAI started on thread={}, jobId={}",
                 Thread.currentThread().getName(), jobId);
+
 
         int page = 0;
         //int pageSize = 10;
         int totalProcessed = 0;
         int totalFailed = 0;
         int batchSize = 5;
-
         try {
             boolean hasNext;
             do {
@@ -371,7 +409,7 @@ public class ResumeAsyncAnalysis {
     // AI ANALYSIS
     // =====================================================================
 
-    private ResumeAnalysisDTO analyzeSingleResumeAsync(ResumeTempDto resume, String jobRole) {
+    public ResumeAnalysisDTO analyzeSingleResumeAsync(ResumeTempDto resume, String jobRole) {
         try {
             String skills = resume.getSkills()
                     .stream()
@@ -412,7 +450,7 @@ public class ResumeAsyncAnalysis {
         }
     }
 
-    private ResumeResult safeAnalyze(ResumeTempDto resume, String jobRole,String jobId) {
+    public ResumeResult safeAnalyze(ResumeTempDto resume, String jobRole,String jobId) {
         try {
             return ResumeResult.ok(analyzeSingleResumeAsync(resume, jobRole));
         } catch (Exception e) {

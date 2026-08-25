@@ -49,9 +49,12 @@ public class ResumeServiceImplementation implements ResumeService {
     ConvertingEntityToDtos convertingEntityToDtos;
     private StorageService storageService;
     private ResumeExtractionStrategyFactory resumeExtractionStrategyFactory;
+    private final EmbeddingService embeddingService;
+
 //    create a constructor
 
-    public ResumeServiceImplementation(AiApis aiApis, ResumeRepository resumeRepository, ResumeHelper resumeHelper, ResumeAnalysis resumeAnalysis, ModelMapper modelMapper, UserRepository userRepository, ConvertingEntityToDtos convertingEntityToDtos, StorageService storageService, ResumeExtractionStrategyFactory resumeExtractionStrategyFactory) {
+    public ResumeServiceImplementation(AiApis aiApis, ResumeRepository resumeRepository, ResumeHelper resumeHelper, ResumeAnalysis resumeAnalysis, ModelMapper modelMapper, UserRepository userRepository, ConvertingEntityToDtos convertingEntityToDtos, StorageService storageService, ResumeExtractionStrategyFactory resumeExtractionStrategyFactory, EmbeddingService embeddingService
+) {
         this.aiApis = aiApis;
         this.resumeRepository=resumeRepository;
         this.resumeHelper=resumeHelper;
@@ -61,6 +64,7 @@ public class ResumeServiceImplementation implements ResumeService {
         this.convertingEntityToDtos=convertingEntityToDtos;
         this.storageService=storageService;
         this.resumeExtractionStrategyFactory = resumeExtractionStrategyFactory;
+        this.embeddingService = embeddingService;
     }
     @Caching(evict = {
             @CacheEvict(value = "getAllDashboardDetails", allEntries = true),

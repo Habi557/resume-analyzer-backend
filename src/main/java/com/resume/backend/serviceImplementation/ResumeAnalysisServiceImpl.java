@@ -24,6 +24,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.lang.reflect.Method;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +42,7 @@ public class ResumeAnalysisServiceImpl implements ResumeAnalysisService {
     private final ResumeAsyncAnalysis resumeAsyncAnalysis;
     private final ResumeRepository resumeRepository;
 
+
     public ResumeAnalysisServiceImpl(ResumeAnalysisJobRepository resumeJobRepository, ResumeAsyncAnalysis resumeAsyncAnalysis,ResumeRepository resumeRepository) {
         this.resumeJobRepository = resumeJobRepository;
         this.resumeAsyncAnalysis = resumeAsyncAnalysis;
@@ -54,7 +56,8 @@ public class ResumeAnalysisServiceImpl implements ResumeAnalysisService {
                 .jobRole(jobRole)
                 .status(JobStatus.PENDING).totalResumes((int)resumeRepository.count()).processedResumes(0).failedResumes(0).createdAt(LocalDateTime.now()).build();
         resumeJobRepository.save(build);
-        resumeAsyncAnalysis.resumeScreenAI(jobRole,jobId,scanAllresumesIsChecked);
+        //resumeAsyncAnalysis.resumeScreenAI(jobRole,jobId,scanAllresumesIsChecked);
+        resumeAsyncAnalysis.test(jobRole,jobId,scanAllresumesIsChecked);
         return jobId;
 
 
