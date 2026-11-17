@@ -38,9 +38,9 @@ public class UserRateLimitFilter extends OncePerRequestFilter {
                 response.getWriter().write("""
                     {
                       "status": 429,
-                      "message": "Rate limit exceeded"
+                      "message": "Rate limit exceeded for %s"
                     }
-                    """);
+                    """.formatted(rateLimitRule.name()));
                 log.info("Rate limit exceeded for user {} and rule {}", userName, rateLimitRule.name());
                 return;
             }
@@ -58,7 +58,7 @@ public class UserRateLimitFilter extends OncePerRequestFilter {
         if(uri.contains("/chatbot")){
             return new RateLimitRule("CHATBOT", 10, Duration.ofMinutes(1));
         }
-        return new RateLimitRule("DEFAULT", 20, Duration.ofMinutes(1));
+        return new RateLimitRule("DEFAULT", 5, Duration.ofMinutes(1));
         
     }
 }

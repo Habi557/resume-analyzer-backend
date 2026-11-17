@@ -67,7 +67,7 @@ public class ResumeAsyncAnalysis {
     private Integer pageSize;
     private final JobLauncher jobLauncher;
     private Job job;
-    private final EmbeddingService embeddingService;
+    //private final EmbeddingService embeddingService;
 
     ResumeAsyncAnalysis(ResumeRepository resumeRepository,
                         ConvertingEntityToDtos convertingEntityToDtos,
@@ -78,7 +78,7 @@ public class ResumeAsyncAnalysis {
                         ResumeAnalysisJobRepository resumeJobRepository,
                         ObjectMapper objectMapper,
                         ResumeAnalysisFailureRepository resumeAnalysisFailureRepository,
-                        JobLauncher jobLauncher, Job job ,EmbeddingService embeddingService) {
+                        JobLauncher jobLauncher, Job job ) {
         this.resumeRepository = resumeRepository;
         this.convertingEntityToDtos = convertingEntityToDtos;
         this.modelMapper = modelMapper;
@@ -90,7 +90,7 @@ public class ResumeAsyncAnalysis {
         this.resumeAnalysisFailureRepository = resumeAnalysisFailureRepository;
         this.jobLauncher = jobLauncher;
         this.job = job;
-        this.embeddingService = embeddingService;
+        //this.embeddingService = embeddingService;
     }
     @PostConstruct
     public void init() {

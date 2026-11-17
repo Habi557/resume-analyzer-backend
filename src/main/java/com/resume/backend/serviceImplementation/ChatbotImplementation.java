@@ -1,6 +1,7 @@
 package com.resume.backend.serviceImplementation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.introspect.AnnotatedAndMetadata;
 import com.resume.backend.dtos.ChatBotAnalysis;
 import com.resume.backend.dtos.ResumeAnalysisDTO;
 import com.resume.backend.entity.Resume;
@@ -9,38 +10,50 @@ import com.resume.backend.entity.Skill;
 import com.resume.backend.exceptions.AiNotRespondingException;
 import com.resume.backend.exceptions.TemplateNotFoundException;
 import com.resume.backend.helperclass.ConvertingEntityToDtos;
+import com.resume.backend.helperclass.EmbeddingHelper;
 import com.resume.backend.helperclass.ResumeHelper;
 import com.resume.backend.helperclass.ResumeSpecification;
+import com.resume.backend.pgvectorRepository.ResumeEmbeddingRepository;
 import com.resume.backend.repository.ResumeAnalysis;
 import com.resume.backend.repository.ResumeRepository;
 import com.resume.backend.services.ChatbotService;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import java.io.IOException;
 import java.util.stream.Collectors;
-
+@Slf4j
 @Service
 public class ChatbotImplementation implements ChatbotService {
     private ChatClient chatClient;
     private ResumeHelper resumeHelper;
     private ResumeRepository resumeRepository;
     private ConvertingEntityToDtos convertingEntityToDtos;
+    private EmbeddingService embeddingService;
+    private EmbeddingHelper embeddingHelper;
+    private ResumeEmbeddingRepository embeddingRepository;
 
-    public  ChatbotImplementation(ChatClient chatClient, ResumeHelper resumeHelper, ResumeRepository resumeRepository, ConvertingEntityToDtos convertingEntityToDtos) {
+    public  ChatbotImplementation(ChatClient chatClient, ResumeHelper resumeHelper, ResumeRepository resumeRepository, ConvertingEntityToDtos convertingEntityToDtos, EmbeddingService embeddingService, EmbeddingHelper embeddingHelper, ResumeEmbeddingRepository embeddingRepository) {
         this.chatClient = chatClient;
         this.resumeHelper=resumeHelper;
         this.resumeRepository=resumeRepository;
         this.convertingEntityToDtos=convertingEntityToDtos;
+        this.embeddingService = embeddingService;
+        this.embeddingHelper = embeddingHelper;
+        this.embeddingRepository = embeddingRepository;
     }
 
     public List<ResumeAnalysisDTO> getAnswer(String message) {
@@ -87,14 +100,8 @@ public class ChatbotImplementation implements ChatbotService {
 
             // Step 5: Execute search
             List<Resume> results = resumeRepository.findAll(spec);
-            List<ResumeAnalysisDTO> collect = results.stream()
-                    .map(resume -> resume.getResumeAnalysisList().stream()
-                            .max(Comparator.comparing(ResumeAnalysisEntity::getMatchPercentage))
-                            .map(convertingEntityToDtos::convertResumeAnalysisEntityToResumeAnalysisDTO)
-                            .orElse(null)   // safe
-                    )
-                    .filter(Objects::nonNull)   // remove resumes without analysis
-                    .collect(Collectors.toList());
+            List<ResumeAnalysisDTO> collect = concertResumesToResumeAnalysisDTO(results);
+
             return collect;
 
 
@@ -111,6 +118,52 @@ public class ChatbotImplementation implements ChatbotService {
         }
     }
 
+    @Override
+    public List<ResumeAnalysisDTO> getAnswerV2(String message ,int size) {
+        float[] embedding = embeddingService.getEmbedding(message);
+        String pgVector = embeddingHelper.toPgVector(embedding);
+        log.info("message {}", message);
+        log.info("Vector: from question {}", pgVector);
+        List<Long> listOfIds= embeddingRepository.similaritySearch(pgVector, size);
+        log.info("list of ids {}", listOfIds);
+        PageRequest pageRequest = PageRequest.of(1, size);
+        List<Resume> skillsResults = resumeRepository.findWithSkills(listOfIds);
+        List<Resume> resumesWithEducation = resumeRepository.findWithEducation(listOfIds);
+        List<Resume> resumesWithAnalysis = resumeRepository.findWithAnalysis(listOfIds);
+        Map<Long, Resume> resumeMap = skillsResults.stream()
+                .collect(Collectors.toMap(
+                        Resume::getId,
+                        Function.identity()
+                ));
+        for (Resume educationResume : resumesWithEducation) {
+
+            Resume resume = resumeMap.get(educationResume.getId());
+
+            if (resume != null) {
+                resume.setEducationList(
+                        educationResume.getEducationList()
+                );
+            }
+        }
+        for (Resume analysisResume : resumesWithAnalysis) {
+
+            Resume resume = resumeMap.get(analysisResume.getId());
+
+            if (resume != null) {
+                resume.setResumeAnalysisList(
+                        analysisResume.getResumeAnalysisList()
+                );
+            }
+        }
+        List<Resume> finalResumes = listOfIds.stream()
+                .map(resumeMap::get)
+                .filter(Objects::nonNull)
+                .toList();
+        log.info("resumes {}", finalResumes.size());
+        List<ResumeAnalysisDTO> resumeAnalysisDTOList = concertResumesToResumeAnalysisDTO(finalResumes);
+
+        return resumeAnalysisDTOList;
+    }
 
 
     private String buildResponse(List<Resume> resumes, String skillsQuery, Double experience) {
@@ -124,6 +177,7 @@ public class ChatbotImplementation implements ChatbotService {
         for (Resume resume : resumes) {
             String name = resume.getName();
             Double exp = resume.getYearsOfExperience();
+
 
             // Convert List<Skill> to List<String> of skill names
             List<String> skillNames = resume.getSkills()
@@ -153,6 +207,19 @@ public static Specification<Resume> hasAnyAlias(List<String> aliases) {
         return cb.or(predicates.toArray(new Predicate[0]));
     };
 }
+public List<ResumeAnalysisDTO> concertResumesToResumeAnalysisDTO(List<Resume> resumes){
+
+    List<ResumeAnalysisDTO> collect = resumes.stream()
+            .map(resume -> resume.getResumeAnalysisList().stream()
+                    .max(Comparator.comparing(ResumeAnalysisEntity::getMatchPercentage))
+                    .map(convertingEntityToDtos::convertResumeAnalysisEntityToResumeAnalysisDTO)
+                    .orElse(null)   // safe
+            )
+            .filter(Objects::nonNull)   // remove resumes without analysis
+            .collect(Collectors.toList());
+    return collect;
+}
+
 
 
 }

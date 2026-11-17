@@ -7,10 +7,8 @@ import com.resume.backend.StrategyFactory.ResumeExtractionStrategyFactory;
 import com.resume.backend.dtos.*;
 import com.resume.backend.entity.*;
 import com.resume.backend.exceptions.AiNotRespondingException;
-import com.resume.backend.helperclass.AiApis;
-import com.resume.backend.helperclass.ConvertingEntityToDtos;
-import com.resume.backend.helperclass.ResumeHelper;
-import com.resume.backend.helperclass.ResumeSection;
+import com.resume.backend.helperclass.*;
+import com.resume.backend.pgvectorRepository.ResumeEmbeddingRepository;
 import com.resume.backend.repository.ResumeAnalysis;
 import com.resume.backend.repository.ResumeRepository;
 import com.resume.backend.repository.UserRepository;
@@ -50,11 +48,12 @@ public class ResumeServiceImplementation implements ResumeService {
     private StorageService storageService;
     private ResumeExtractionStrategyFactory resumeExtractionStrategyFactory;
     private final EmbeddingService embeddingService;
+    private  final EmbeddingHelper embeddingHelper;
+    private ResumeEmbeddingRepository resumeEmbeddingRepository;
 
 //    create a constructor
 
-    public ResumeServiceImplementation(AiApis aiApis, ResumeRepository resumeRepository, ResumeHelper resumeHelper, ResumeAnalysis resumeAnalysis, ModelMapper modelMapper, UserRepository userRepository, ConvertingEntityToDtos convertingEntityToDtos, StorageService storageService, ResumeExtractionStrategyFactory resumeExtractionStrategyFactory, EmbeddingService embeddingService
-) {
+    public ResumeServiceImplementation(AiApis aiApis, ResumeRepository resumeRepository, ResumeHelper resumeHelper, ResumeAnalysis resumeAnalysis, ModelMapper modelMapper, UserRepository userRepository, ConvertingEntityToDtos convertingEntityToDtos, StorageService storageService, ResumeExtractionStrategyFactory resumeExtractionStrategyFactory, EmbeddingService embeddingService, EmbeddingHelper embeddingHelper, ResumeEmbeddingRepository resumeEmbeddingRepository) {
         this.aiApis = aiApis;
         this.resumeRepository=resumeRepository;
         this.resumeHelper=resumeHelper;
@@ -65,6 +64,8 @@ public class ResumeServiceImplementation implements ResumeService {
         this.storageService=storageService;
         this.resumeExtractionStrategyFactory = resumeExtractionStrategyFactory;
         this.embeddingService = embeddingService;
+        this.embeddingHelper = embeddingHelper;
+        this.resumeEmbeddingRepository = resumeEmbeddingRepository;
     }
     @Caching(evict = {
             @CacheEvict(value = "getAllDashboardDetails", allEntries = true),
@@ -185,7 +186,13 @@ public class ResumeServiceImplementation implements ResumeService {
             resume.setRedFlags(resumeJson.getRedFlags());
 //            String resumeHash = DigestUtils.sha256Hex(file.getInputStream());
 //            resume.setResumeHash(resumeHash);
-
+            String embeddingText = embeddingHelper.createEmbeddingText(resumeJson);
+            log.info("Creating embedding for resume: {}", embeddingText);
+            float[] embedding = embeddingService.getEmbedding(embeddingText);
+            log.info("Embedding created float []: {}", embedding);
+            String pgVector = embeddingHelper.toPgVector(embedding);
+            log.info("PG Vector created: {}", pgVector);
+            resumeEmbeddingRepository.save(embeddingHelper.convertToResumeEmbeddingData(resumeId,resumeJson),pgVector);
             resume.setStatus(ResumeStatus.UPLOADED);
             resumeRepository.save(resume);
 
