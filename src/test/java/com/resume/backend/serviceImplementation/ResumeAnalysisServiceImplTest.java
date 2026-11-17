@@ -83,11 +83,11 @@ class ResumeAnalysisServiceImplTest {
         private final AtomicBoolean scanAll = new AtomicBoolean();
 
         FakeResumeAsyncAnalysis() {
-            super(null, null, null, null, null, null, null, new ObjectMapper(), null);
+            super(null, null, null, null, null, null, null, new ObjectMapper(), null, null, null);
         }
 
         @Override
-        public void resumeScreenAI(String jobRole, String jobId, boolean scanAllresumesIsChecked) {
+        public void test(String jobRole, String jobId, boolean scanAllresumesIsChecked) {
             called.set(true);
             this.jobRole.set(jobRole);
             this.jobId.set(jobId);

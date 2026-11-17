@@ -162,6 +162,7 @@ public class AuthServiceImpl  implements AuthService {
 //        UserEntity user = token.getUser();
 //
 //        String accessToken = jwtService.generateToken(user.getEmail());
+        saveUserToken(user, accessToken, refresh);
 
         return AuthResponse.builder()
                 .accessToken(accessToken)

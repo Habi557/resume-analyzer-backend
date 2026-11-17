@@ -37,7 +37,7 @@ class ResumeServiceImplementationTest {
         };
         ResumeServiceImplementation service = new ResumeServiceImplementation(
                 null, null, null, null, null, null, null, storageService, null
-        );
+        , null, null, null);
 
         FileDownloadDataDto result = service.dowloadResume(99L);
 

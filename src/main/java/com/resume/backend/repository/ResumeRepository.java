@@ -16,6 +16,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ResumeRepository extends JpaRepository<Resume,Long>, JpaSpecificationExecutor<Resume> {
@@ -58,5 +59,18 @@ public interface ResumeRepository extends JpaRepository<Resume,Long>, JpaSpecifi
     Page<Resume> findByScanAllresumesIsCheckedFalseAndStatus(PageRequest pageRequest, ResumeStatus status);
     //@EntityGraph(attributePaths ={"skills","educationList"})
     Page<Resume>findByScanAllresumesIsCheckedTrueAndStatus(PageRequest pageRequest,ResumeStatus status);
+
+    @EntityGraph(attributePaths = {"skills", "educationList"})
+    Optional<Resume> findById(Long id);
+    @EntityGraph(attributePaths = "skills")
+    @Query("SELECT r FROM Resume r WHERE r.id IN :ids")
+    List<Resume> findWithSkills(@Param("ids") List<Long> ids);
+    @EntityGraph(attributePaths = "educationList")
+    @Query("SELECT r FROM Resume r WHERE r.id IN :ids")
+    List<Resume> findWithEducation(@Param("ids") List<Long> ids);
+    @EntityGraph(attributePaths = "resumeAnalysisList")
+    @Query("SELECT r FROM Resume r WHERE r.id IN :ids")
+    List<Resume> findWithAnalysis(@Param("ids") List<Long> ids);
+
 
 }

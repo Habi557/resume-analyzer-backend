@@ -13,7 +13,8 @@ import lombok.ToString;
 
 import java.time.LocalDateTime;
 import java.util.List;
-
+@Getter
+@Setter
 @Data
 @Entity
 @Table(name = "ResumeAnalysisData")

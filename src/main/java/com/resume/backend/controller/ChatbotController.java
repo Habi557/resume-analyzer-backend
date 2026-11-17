@@ -27,4 +27,9 @@ public class ChatbotController {
         return new ResponseEntity<List<ResumeAnalysisDTO>>(answer, HttpStatus.OK);
 
     }
+    @GetMapping("/v2/query")
+    public ResponseEntity<List<ResumeAnalysisDTO>> chatbotV2(@RequestParam("userQuery") String body, @RequestParam(defaultValue = "5" , required = false) int size){
+        List<ResumeAnalysisDTO> answer = chatbotService.getAnswerV2(body, size);
+        return new ResponseEntity<List<ResumeAnalysisDTO>>(answer, HttpStatus.OK);
+    }
 }

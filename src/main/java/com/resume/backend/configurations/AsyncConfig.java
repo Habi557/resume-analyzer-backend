@@ -6,6 +6,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.ThreadPoolExecutor;
 
 @Configuration
 @EnableAsync
@@ -17,6 +18,7 @@ public class AsyncConfig {
         executor.setCorePoolSize(3);
         executor.setMaxPoolSize(5);
         executor.setQueueCapacity(10);
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
         executor.setThreadNamePrefix("resume-job-");
         executor.initialize();
         return executor;
